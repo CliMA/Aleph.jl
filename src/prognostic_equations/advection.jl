@@ -39,8 +39,11 @@ NVTX.@annotate function horizontal_advection_tendency!(Yₜ, Y, p, t)
         @. Yₜ.c.sgs⁰.ρatke -= wdivₕ(Y.c.sgs⁰.ρatke * ᶜu⁰)
     end
 
-    @. Yₜ.c.uₕ -= C12(gradₕ(ᶜp - ᶜp_ref) / Y.c.ρ + gradₕ(ᶜK + ᶜΦ))
-    # Without the C12(), the right-hand side would be a C1 or C2 in 2D space.
+    if p.atmos.check_kinetic_energy
+        @. Yₜ.c.uₕ -= C12(gradₕ(ᶜK))
+    else
+        @. Yₜ.c.uₕ -= C12(gradₕ(ᶜp - ᶜp_ref) / Y.c.ρ + gradₕ(ᶜK + ᶜΦ))
+    end # Without the C12(), the right-hand side would be a C1 or C2 in 2D space.
     return nothing
 end
 
@@ -73,6 +76,7 @@ NVTX.@annotate function explicit_vertical_advection_tendency!(Yₜ, Y, p, t)
     point_type = eltype(Fields.coordinate_field(Y.c))
     (; dt) = p
     ᶜJ = Fields.local_geometry_field(Y.c).J
+    ᶠJ = Fields.local_geometry_field(Y.f).J
     (; ᶜf³, ᶠf¹², ᶜΦ) = p.core
     (; ᶜu, ᶠu³, ᶜK) = p.precomputed
     (; edmfx_upwinding) = n > 0 || advect_tke ? p.atmos.numerics : all_nothing
@@ -116,6 +120,7 @@ NVTX.@annotate function explicit_vertical_advection_tendency!(Yₜ, Y, p, t)
                     coeff,
                     Yₜ.c.ρe_tot[colidx],
                     ᶜJ[colidx],
+                    ᶠJ[colidx],
                     Y.c.ρ[colidx],
                     ᶠu³[colidx],
                     ᶜh_tot[colidx],
@@ -132,6 +137,7 @@ NVTX.@annotate function explicit_vertical_advection_tendency!(Yₜ, Y, p, t)
                     coeff,
                     ᶜρχₜ[colidx],
                     ᶜJ[colidx],
+                    ᶠJ[colidx],
                     Y.c.ρ[colidx],
                     ᶠu³[colidx],
                     ᶜχ[colidx],
@@ -184,6 +190,7 @@ NVTX.@annotate function explicit_vertical_advection_tendency!(Yₜ, Y, p, t)
             vertical_transport!(
                 Yₜ.c.sgs⁰.ρatke[colidx],
                 ᶜJ[colidx],
+                ᶠJ[colidx],
                 ᶜρ⁰[colidx],
                 ᶠu³⁰[colidx],
                 ᶜa_scalar[colidx],
@@ -209,6 +216,7 @@ function edmfx_sgs_vertical_advection_tendency!(
     n = n_prognostic_mass_flux_subdomains(turbconv_model)
     (; dt) = p
     ᶜJ = Fields.local_geometry_field(Y.c).J
+    ᶠJ = Fields.local_geometry_field(Y.f).J
     (; edmfx_upwinding) = p.atmos.numerics
     (; ᶠu³ʲs, ᶠKᵥʲs, ᶜρʲs) = p.precomputed
     (; ᶠgradᵥ_ᶜΦ) = p.core
@@ -225,11 +233,18 @@ function edmfx_sgs_vertical_advection_tendency!(
             ᶜleft_bias(ᶠKᵥʲs.:($$j)[colidx]),
             ᶜright_bias(ᶠKᵥʲs.:($$j)[colidx]),
         )
-        # For the updraft u_3 equation, we assume the grid-mean to be hydrostatic
-        # and calcuate the buoyancy term relative to the grid-mean density.
-        @. Yₜ.f.sgsʲs.:($$j).u₃[colidx] -=
-            (ᶠinterp(ᶜρʲs.:($$j)[colidx] - Y.c.ρ[colidx]) * ᶠgradᵥ_ᶜΦ[colidx]) /
-            ᶠinterp(ᶜρʲs.:($$j)[colidx]) + ᶠgradᵥ(ᶜKᵥʲ[colidx])
+
+        if p.atmos.check_kinetic_energy
+            @. Yₜ.f.sgsʲs.:($$j).u₃[colidx] -= ᶠgradᵥ(ᶜKᵥʲ[colidx])
+        else
+            # Assume the grid-mean to be hydrostatic and calcuate the buoyancy
+            # term relative to the grid-mean density.
+            @. Yₜ.f.sgsʲs.:($$j).u₃[colidx] -=
+                (
+                    ᶠinterp(ᶜρʲs.:($$j)[colidx] - Y.c.ρ[colidx]) *
+                    ᶠgradᵥ_ᶜΦ[colidx]
+                ) / ᶠinterp(ᶜρʲs.:($$j)[colidx]) + ᶠgradᵥ(ᶜKᵥʲ[colidx])
+        end
 
         # buoyancy term in mse equation
         @. Yₜ.c.sgsʲs.:($$j).mse[colidx] +=
@@ -244,6 +259,7 @@ function edmfx_sgs_vertical_advection_tendency!(
         vertical_transport!(
             Yₜ.c.sgsʲs.:($j).ρa[colidx],
             ᶜJ[colidx],
+            ᶠJ[colidx],
             ᶜρʲs.:($j)[colidx],
             ᶠu³ʲs.:($j)[colidx],
             ᶜa_scalar[colidx],
