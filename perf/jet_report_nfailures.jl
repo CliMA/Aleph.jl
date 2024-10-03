@@ -26,6 +26,7 @@ Yₜ = similar(Y);
 Yₜ_exp = similar(Y);
 Yₜ_lim = similar(Y);
 ref_Y = similar(Y);
+
 #! format: off
 n["step!"]                                       = @n_failures SciMLBase.step!(integrator);
 n["horizontal_advection_tendency!"]              = @n_failures CA.horizontal_advection_tendency!(Yₜ, Y, p, t);
@@ -34,7 +35,7 @@ n["explicit_vertical_advection_tendency!"]       = @n_failures CA.explicit_verti
 n["hyperdiffusion_tendency!"]                    = @n_failures CA.hyperdiffusion_tendency!(Yₜ_exp, Yₜ_lim, Y, p, t);
 n["remaining_tendency!"]                         = @n_failures CA.remaining_tendency!(Yₜ_exp, Yₜ_lim, Y, p, t);
 n["additional_tendency!"]                        = @n_failures CA.additional_tendency!(Yₜ, Y, p, t);
-n["vertical_diffusion_boundary_layer_tendency!"] = @n_failures CA.vertical_diffusion_boundary_layer_tendency!(Yₜ, Y, p, t);
+n["vertical_diffusion_boundary_layer_tendency!"] = @n_failures CA.vertical_diffusion_boundary_layer_tendency!(Yₜ, Y, p, t, p.atmos.vert_diff);
 n["implicit_tendency!"]                          = @n_failures CA.implicit_tendency!(Yₜ, Y, p, t);
 n["set_precomputed_quantities!"]                 = @n_failures CA.set_precomputed_quantities!(Y, p, t);
 n["limiters_func!"]                              = @n_failures CA.limiters_func!(Y, p, t, ref_Y);
@@ -47,3 +48,7 @@ n = filter(x -> x.second ≠ 0, n)
 @info "n-jet failures (excluding n=0):"
 show(IOContext(stdout, :limit => false), MIME"text/plain"(), n)
 println()
+
+using JET
+using NCDatasets, CUDA, HDF5, LLVM, GPUCompiler
+@test_opt ignored_modules = (NCDatasets, CUDA, HDF5, LLVM, GPUCompiler) SciMLBase.step!(integrator)
