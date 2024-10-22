@@ -287,12 +287,12 @@ function detrainment(
         detr = 0
     else
         detr =
-            detr_inv_tau +
+            (ᶜvert_div < 0) * (detr_inv_tau +
             detr_coeff * abs(ᶜwʲ) +
             detr_buoy_coeff * abs(min(ᶜbuoyʲ - ᶜbuoy⁰, 0)) /
             max(eps(FT), abs(ᶜwʲ - ᶜw⁰)) - detr_vertdiv_coeff * ᶜvert_div -
             detr_massflux_vertdiv_coeff * min(ᶜmassflux_vert_div, 0) / ᶜρaʲ +
-            max_area_limiter
+            max_area_limiter)
     end
 
     return max(detr, 0)
@@ -315,9 +315,18 @@ function detrainment(
     ᶜentr,
     ᶜvert_div,
     ᶜmassflux_vert_div,
+    ᶜtke⁰,
     ::ConstantAreaDetrainment,
 ) where {FT}
-    detr = ᶜentr - ᶜvert_div
+    turbconv_params = CAP.turbconv_params(params)
+    detr_coeff = CAP.detr_coeff(turbconv_params)
+    detr_vertdiv_coeff = CAP.detr_vertdiv_coeff(turbconv_params)
+    if ᶜρaʲ <= 0
+        detr = 0
+    else
+        #detr = ᶜentr - ᶜvert_div
+        detr = (ᶜvert_div < 0) * (ᶜentr + detr_vertdiv_coeff * abs(ᶜvert_div))
+    end
     return max(detr, 0)
 end
 
@@ -363,8 +372,14 @@ limit_entrainment(entr::FT, a, dt) where {FT} = max(
     min(entr, FT(0.9) * (1 - a) / max(a, eps(FT)) / dt, FT(0.9) * 1 / dt),
     0,
 )
+# limit_entrainment(entr::FT, a, dt) where {FT} = max(
+#     entr, 0
+# )
+# limit_detrainment(detr::FT, a, dt) where {FT} =
+#     max(min(detr, FT(0.9) * 1 / dt), 0)
+
 limit_detrainment(detr::FT, a, dt) where {FT} =
-    max(min(detr, FT(0.9) * 1 / dt), 0)
+    max(detr, 0)
 
 function limit_turb_entrainment(dyn_entr::FT, turb_entr::FT, dt) where {FT}
     return max(min((FT(0.9) * 1 / dt) - dyn_entr, turb_entr), 0)

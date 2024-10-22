@@ -295,3 +295,21 @@ function edmfx_filter_tendency!(Yₜ, Y, p, t, turbconv_model::PrognosticEDMFX)
         end
     end
 end
+
+edmfx_diffusion_tendency!(Yₜ, Y, p, t, turbconv_model) = nothing
+
+function edmfx_diffusion_tendency!(Yₜ, Y, p, t, turbconv_model::PrognosticEDMFX)
+
+    FT = Spaces.undertype(axes(Y.c))
+    n = n_mass_flux_subdomains(turbconv_model)
+    (; ᶜρʲs) = p.precomputed
+    ᶜa_scalar = p.scratch.ᶜtemp_scalar
+    for j in 1:n
+        @. ᶜa_scalar = draft_area(Y.c.sgsʲs.:($$j).ρa, ᶜρʲs.:($$j))
+        ᶜdivᵥ_ρa = Operators.DivergenceF2C(
+            top = Operators.SetValue(C3(FT(0))),
+            bottom = Operators.SetValue(C3(FT(0))),
+        )
+        @. Yₜ.c.sgsʲs.:($$j).ρa -= max(ᶜdivᵥ_ρa(-(ᶠinterp(ᶜρʲs.:($$j)) * FT(5) * ᶠgradᵥ(ᶜa_scalar))), 0)
+    end
+end

@@ -647,10 +647,13 @@ Base.@kwdef struct MoistAdiabaticProfileEDMFX <: InitialCondition
 end
 
 draft_area(::Type{FT}) where {FT} =
-    z -> z < 0.7e4 ? FT(0.5) * exp(-(z - FT(4e3))^2 / 2 / FT(1e3)^2) : FT(0)
+    z -> z < 0.2e4 ? FT(0.5) * exp(-(z - FT(5e2))^2 / 2 / FT(1e2)^2) : FT(0)
 
 edmfx_q_tot(::Type{FT}) where {FT} =
-    z -> z < 0.7e4 ? FT(1e-3) * exp(-(z - FT(4e3))^2 / 2 / FT(1e3)^2) : FT(0)
+    z -> z < 0.2e4 ? FT(1e-3) * exp(-(z - FT(5e2))^2 / 2 / FT(1e2)^2) : FT(0)
+
+edmfx_w(::Type{FT}) where {FT} =
+    z -> z < 0.2e4 ? FT(4) * exp(-(z - FT(5e2))^2 / 2 / FT(1e2)^2) : FT(0)
 
 function (initial_condition::MoistAdiabaticProfileEDMFX)(params)
     (; perturb) = initial_condition
@@ -674,7 +677,7 @@ function (initial_condition::MoistAdiabaticProfileEDMFX)(params)
             turbconv_state = EDMFState(;
                 tke = FT(0),
                 draft_area = draft_area(FT)(z),
-                velocity = Geometry.WVector(FT(1.0)),
+                velocity = Geometry.WVector(edmfx_w(FT)(z)),
             ),
         )
     end

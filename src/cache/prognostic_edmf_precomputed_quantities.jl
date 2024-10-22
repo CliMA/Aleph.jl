@@ -190,7 +190,8 @@ NVTX.@annotate function set_prognostic_edmf_precomputed_quantities_closures!(
         @. ᶜturb_entrʲs.:($$j) =
             limit_turb_entrainment(ᶜentrʲs.:($$j), ᶜturb_entrʲs.:($$j), dt)
 
-        @. ᶜvert_div = ᶜdivᵥ(ᶠinterp(ᶜρʲs.:($$j)) * ᶠu³ʲs.:($$j)) / ᶜρʲs.:($$j)
+        #@. ᶜvert_div = ᶜdivᵥ(ᶠinterp(ᶜρʲs.:($$j)) * ᶠu³ʲs.:($$j)) / ᶜρʲs.:($$j)
+        @. ᶜvert_div = ᶜdivᵥ(ᶠu³ʲs.:($$j))
         @. ᶜmassflux_vert_div =
             ᶜdivᵥ(ᶠinterp(Y.c.sgsʲs.:($$j).ρa) * ᶠu³ʲs.:($$j))
         @. ᶜdetrʲs.:($$j) = detrainment(

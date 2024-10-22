@@ -10,11 +10,11 @@ function zero_velocity_tendency!(Yₜ, Y, p, t)
 
         @. Yₜ.c.uₕ = C12(FT(0), FT(0))
         @. Yₜ.f.u₃ = Geometry.Covariant3Vector(FT(0))
-        if p.atmos.turbconv_model isa PrognosticEDMFX
-            for j in 1:n
-                @. Yₜ.f.sgsʲs.:($$j).u₃ = Geometry.Covariant3Vector(FT(0))
-            end
-        end
+        # if p.atmos.turbconv_model isa PrognosticEDMFX
+        #     for j in 1:n
+        #         @. Yₜ.f.sgsʲs.:($$j).u₃ = Geometry.Covariant3Vector(FT(0))
+        #     end
+        # end
     end
     return nothing
 end

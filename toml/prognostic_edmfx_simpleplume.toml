@@ -29,10 +29,10 @@ value = 0
 value = 0
 
 [detr_vertdiv_coeff]
-value = 0
+value = 1
 
 [detr_massflux_vertdiv_coeff]
-value = 1
+value = 0
 
 [max_area_limiter_scale]
 value = 0

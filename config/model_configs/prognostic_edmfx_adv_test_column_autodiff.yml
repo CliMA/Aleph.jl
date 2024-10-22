@@ -1,18 +1,31 @@
 initial_condition: "MoistAdiabaticProfileEDMFX"
 advection_test: true
 turbconv: "prognostic_edmfx"
-use_exact_jacobian: false
-ode_algo: "ARS343"
+implicit_diffusion: true
+implicit_sgs_advection: true
+use_exact_jacobian: true
+n_steps_update_exact_jacobian: 0
+debug_approximate_jacobian: true
+approximate_linear_solve_iters: 2
+max_newton_iters_ode: 10
+ode_algo: "ARS111"
 edmfx_upwinding: "first_order"
+edmfx_entr_model: "Generalized"
+edmfx_detr_model: "Generalized"
+# edmfx_sgs_mass_flux: false
+# edmfx_sgs_diffusive_flux: false
+# edmfx_nh_pressure: true
+# edmfx_filter: true
 config: "column"
 moist: "equil"
 z_max: 6e3
 z_elem: 60
 z_stretch: false
-dt: "60secs"
+dt: "1200secs"
 t_end: "2hours"
 toml: [toml/prognostic_edmfx_advection.toml]
 netcdf_interpolation_num_points: [2, 2, 63]
+output_default_diagnostics: true
 diagnostics:
   - short_name: [ts, ta, thetaa, ha, pfull, rhoa, ua, va, wa, hur, hus, cl, clw, cli, hussfc, evspsbl, pr]
     period: 1hours

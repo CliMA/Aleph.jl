@@ -41,6 +41,11 @@ NVTX.@annotate function additional_tendency!(Yₜ, Y, p, t)
             t,
             p.atmos.turbconv_model,
         )
+        edmfx_entr_detr_tendency!(Yₜ, Y, p, t, p.atmos.turbconv_model) 
+        edmfx_nh_pressure_tendency!(Yₜ, Y, p, t, p.atmos.turbconv_model) 
+        edmfx_filter_tendency!(Yₜ, Y, p, t, p.atmos.turbconv_model)
+        #edmfx_diffusion_tendency!(Yₜ, Y, p, t, p.atmos.turbconv_model)
+        edmfx_sgs_mass_flux_tendency!(Yₜ, Y, p, t, p.atmos.turbconv_model)
     end
 
     if p.atmos.diff_mode == Explicit()
@@ -54,11 +59,11 @@ NVTX.@annotate function additional_tendency!(Yₜ, Y, p, t)
         edmfx_sgs_diffusive_flux_tendency!(Yₜ, Y, p, t, p.atmos.turbconv_model)
     end
 
+    #edmfx_entr_detr_tendency!(Yₜ, Y, p, t, p.atmos.turbconv_model) 
+    #edmfx_nh_pressure_tendency!(Yₜ, Y, p, t, p.atmos.turbconv_model) 
+    #edmfx_filter_tendency!(Yₜ, Y, p, t, p.atmos.turbconv_model)
+    #edmfx_diffusion_tendency!(Yₜ, Y, p, t, p.atmos.turbconv_model)
     radiation_tendency!(Yₜ, Y, p, t, p.atmos.radiation_mode)
-    edmfx_entr_detr_tendency!(Yₜ, Y, p, t, p.atmos.turbconv_model)
-    edmfx_sgs_mass_flux_tendency!(Yₜ, Y, p, t, p.atmos.turbconv_model)
-    edmfx_nh_pressure_tendency!(Yₜ, Y, p, t, p.atmos.turbconv_model)
-    edmfx_filter_tendency!(Yₜ, Y, p, t, p.atmos.turbconv_model)
     edmfx_tke_tendency!(Yₜ, Y, p, t, p.atmos.turbconv_model)
     # Non-equilibrium cloud formation
     cloud_condensate_tendency!(Yₜ, p, p.atmos.moisture_model)

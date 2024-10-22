@@ -1449,6 +1449,7 @@ EDMFBoxPlots = Union{
     Val{:diagnostic_edmfx_trmm_box_0M},
     Val{:diagnostic_edmfx_dycoms_rf01_explicit_box},
     Val{:prognostic_edmfx_adv_test_column},
+    Val{:prognostic_edmfx_adv_test_column_autodiff},
     Val{:prognostic_edmfx_gabls_column},
     Val{:prognostic_edmfx_bomex_fixtke_column},
     Val{:prognostic_edmfx_bomex_column},
@@ -1456,6 +1457,7 @@ EDMFBoxPlots = Union{
     Val{:prognostic_edmfx_bomex_stretched_column},
     Val{:prognostic_edmfx_bomex_pigroup_column},
     Val{:prognostic_edmfx_bomex_implicit_column},
+    Val{:prognostic_edmfx_bomex_implicit_column_autodiff},
     Val{:prognostic_edmfx_dycoms_rf01_column},
     Val{:prognostic_edmfx_trmm_column_0M},
     Val{:prognostic_edmfx_simpleplume_column},
@@ -1565,6 +1567,8 @@ function make_plots(
         "hus",
         "husup",
         "arup",
+        "entr",
+        "detr",
         "tke",
         "ua",
         "thetaa",
@@ -1592,8 +1596,24 @@ function make_plots(
         period = "5m"
     elseif "10m" in available_periods
         period = "10m"
+    elseif "20m" in available_periods
+        period = "20m"
+    elseif "25m" in available_periods
+        period = "25m"
     elseif "30m" in available_periods
         period = "30m"
+    elseif "1h" in available_periods
+        period = "1h"
+    elseif "3h" in available_periods
+        period = "3h"
+    elseif "6h" in available_periods
+        period = "6h"
+    elseif "1m" in available_periods
+        period = "1m"
+    elseif "1m_20s" in available_periods
+        period = "1m_20s"
+    elseif "1m_40s" in available_periods
+        period = "1m_40s"
     end
 
     short_name_tuples = pair_edmf_names(short_names)
