@@ -373,12 +373,26 @@ function compute_clw!(
     cache,
     time,
     moisture_model::T,
-) where {T <: Union{EquilMoistModel, NonEquilMoistModel, CloudyMoisture}}
+) where {T <: Union{EquilMoistModel, NonEquilMoistModel}}
     thermo_params = CAP.thermodynamics_params(cache.params)
     if isnothing(out)
         return copy(cache.precomputed.cloud_diagnostics_tuple.q_liq)
     else
         out .= cache.precomputed.cloud_diagnostics_tuple.q_liq
+    end
+end
+
+function compute_clw!(
+    out,
+    state,
+    cache,
+    time,
+    moisture_model::T,
+) where {T <: CloudyMoisture}
+    if isnothing(out)
+        return state.c.ρq_liq ./ state.c.ρ
+    else
+        out .= state.c.ρq_liq ./ state.c.ρ
     end
 end
 

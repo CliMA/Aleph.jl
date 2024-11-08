@@ -1127,10 +1127,10 @@ function (initial_condition::PrecipitatingColumn)(params)
         if !isnothing(params.cloudy_params)
             clp = params.cloudy_params
             # Partition into the first one or two distributions, regardless of how many
-            # Cloud: N = 100 / cm^3 = 1e8 / m^3; k = 1
-            mom_c = (FT(1e8), FT(2e-5), 2 * FT(2e-5) * FT(2e-5))
-            # Rain: N = 1 / cm^3 = 1e6 / m^3; k = 1
-            mom_r = (FT(1e6), FT(1e-6), 2 * FT(1e-6) * FT(1e-6))
+            # Cloud: N = 10 / cm^3 = 1e8 / m^3; k = 1
+            mom_c = (FT(1e7), FT(2e-5), 2 * FT(2e-5) * FT(2e-5))
+            # Rain: N = 0.1 / cm^3 = 1e6 / m^3; k = 1
+            mom_r = (FT(1e5), FT(1e-6), 2 * FT(1e-6) * FT(1e-6))
             cloud_mom = CL.rflatten(
                 ntuple(length(clp.NProgMoms)) do i
                     ntuple(clp.NProgMoms[i]) do j

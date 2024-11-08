@@ -435,9 +435,9 @@ function separate_liq_rai(FT, moments, pdists, cloudy_params)
     tmp = CL.ParticleDistributions.get_standard_N_q(pdists, cloudy_params.size_threshold / cloudy_params.norms[2])
     ntuple(length(moments)) do k
         if k == 1
-            max(tmp.M_liq * cloudy_params.mom_norms[1], FT(0))
+            max(tmp.M_liq * cloudy_params.mom_norms[2], FT(0))
         elseif k == 2
-            max(tmp.M_rai * cloudy_params.mom_norms[1], FT(0))
+            max(tmp.M_rai * cloudy_params.mom_norms[2], FT(0))
         else
             FT(0)
         end

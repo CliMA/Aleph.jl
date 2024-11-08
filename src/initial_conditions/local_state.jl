@@ -121,8 +121,8 @@ Stores the values of `ρq_rai` and `ρq_sno` for the `precip_model`.
 If no values are provided, they are set to zero.
 """
 struct PrecipStateCloudy{NM, FT} <: PrecipState{FT}
-    q_rai::FT
     moments::NTuple{NM, FT}
+    q_rai::FT
 end
-PrecipStateCloudy(; q_rai = 0, moments = ntuple(_ -> 0, 5)) =
-    PrecipStateCloudy{length(moments), typeof(q_rai)}(q_rai, moments)
+PrecipStateCloudy(; moments = ntuple(_ -> 0, 5), q_rai = 0, ) =
+    PrecipStateCloudy{length(moments), typeof(q_rai)}(moments, q_rai)

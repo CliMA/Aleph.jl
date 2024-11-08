@@ -1,23 +1,27 @@
 config: "column"
 initial_condition: "PrecipitatingColumn"
 surface_setup: "DefaultMoninObukhov"
-z_elem: 32
-z_max: 10000.0
+z_elem: 10
+z_max: 5000.0
 z_stretch: false
 dt: "1secs"
-t_end: "360secs"
+t_end: "2secs"
 dt_save_state_to_disk: "6000secs"
-dt_cloud_fraction: "60secs"
+dt_cloud_fraction: "10secs"
 moist: "nonequil"
 precip_model: "Cloudy"
+cloud_model: "grid_scale"
 num_dist: 2
 smagorinsky_lilly: true
 c_smag: 0.20
 implicit_diffusion: false
 approximate_linear_solve_iters: 2
 regression_test: false
+ode_algo: "ARS343"
 toml: [toml/single_column_precipitation_test.toml]
 output_dir: "output/cloudy_test"
 diagnostics:
   - short_name: [hus, clw, husra, ta, wa, pr]
-    period: 10secs
+    period: 1secs
+  # - short_name: [pr, ]
+  #   period: 10secs

@@ -132,8 +132,8 @@ precip_variables(ls, ::Microphysics1Moment) = (;
     ρq_sno = ls.ρ * ls.precip_state.q_sno,
 )
 precip_variables(ls, ::MicrophysicsCloudy) = (;
-    moments = ls.precip_state.moments,
     ρq_rai = ls.ρ * ls.precip_state.q_rai,
+    moments = ls.precip_state.moments,
 )
 
 # We can use paper-based cases for LES type configurations (no TKE)

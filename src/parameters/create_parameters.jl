@@ -62,7 +62,7 @@ function CloudyParameters(FT, ND::Integer)
     NProgMoms = map(pdists) do dist
         CL.ParticleDistributions.nparams(dist)
     end
-    norms = (FT(1e6), FT(1e-9))
+    norms = (FT(1e3), FT(1e-12))
     mom_norms = CL.get_moments_normalizing_factors(Int.(NProgMoms), norms)
     # Define collision kernel function
     # TODO: make polyfit use FT type test elements (in Cloudy.jl)

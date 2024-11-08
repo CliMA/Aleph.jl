@@ -552,10 +552,8 @@ function make_plots(
             )
         end
         # Make a grid of plots
-        @show p_loc
         p_loc[2] += 1
         p_loc[2] > 3 && (p_loc[1] += 1; p_loc[2] = 1)
-        @show var
         return CairoMakie.current_axis()
     end
 

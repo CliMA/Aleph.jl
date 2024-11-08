@@ -162,9 +162,12 @@ function implicit_vertical_advection_tendency!(Yₜ, Y, p, t)
         )
     # elseif precip_model isa MicrophysicsCloudy
     #     (; weighted_vt) = p.precipitation
-    #     @. Yₜ.c.moments -= ᶜprecipdivᵥ(
-    #         ᶠright_bias(Geometry.WVector(-(weighted_vt)) * Y.c.moments),
-    #     )
+    #     (; params) = p;
+    #     clp = CAP.cloudy_params(params)
+
+    #     for i in 1:sum(clp.NProgMoms)
+    #         @. Yₜ.c.moments.:($$i) -= ᶜprecipdivᵥ(ᶠright_bias(Geometry.WVector(-(weighted_vt.:($$i))) * Y.c.moments.:($$i)),)
+    #     end
     end
 
     @. Yₜ.f.u₃ -= ᶠgradᵥ(ᶜp) / ᶠinterp(Y.c.ρ) + ᶠgradᵥ_ᶜΦ

@@ -43,12 +43,3 @@ function set_precipitation_precomputed_quantities!(Y, p, t, precip_model::Microp
     )
     return nothing
 end
-
-function set_precipitation_precomputed_quantities!(Y, p, t, precip_model::MicrophysicsCloudy)
-    (; ᶜqᵣ) = p.precomputed
-
-    # compute the precipitation specific humidities
-    @. ᶜqᵣ = qₚ(Y.c.ρq_rai, Y.c.ρ)
-
-    return nothing
-end

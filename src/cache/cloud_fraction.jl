@@ -27,7 +27,7 @@ end
 NVTX.@annotate function set_cloud_fraction!(
     Y,
     p,
-    ::Union{EquilMoistModel, NonEquilMoistModel},
+    ::Union{EquilMoistModel, NonEquilMoistModel, CloudyMoisture},
     ::GridScaleCloud,
 )
     (; params) = p
@@ -55,6 +55,7 @@ NVTX.@annotate function set_cloud_fraction!(
             TD.PhasePartition(thermo_params, ᶜts).ice,
         ),
     )
+    return cloud_diagnostics_tuple
 end
 NVTX.@annotate function set_cloud_fraction!(
     Y,

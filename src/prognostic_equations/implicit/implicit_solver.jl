@@ -173,7 +173,6 @@ function ImplicitEquationJacobian(
         name -> (name, name) => FT(-1) * I,
         (@name(c.ρ), moments_if_available..., sfc_if_available...),
     )
-    @show moments_if_available
 
     active_scalar_names = (@name(c.ρ), @name(c.ρe_tot), ρq_tot_if_available...)
     advection_blocks = (
@@ -692,7 +691,23 @@ function update_implicit_equation_jacobian!(A, Y, p, dtγ)
             @. ∂ᶜρqₚ_err_∂ᶜρqₚ +=
                 dtγ * -(ᶜprecipdivᵥ_matrix()) ⋅ DiagonalMatrixRow(ᶠtmp) ⋅
                 ᶠright_bias_matrix() ⋅ DiagonalMatrixRow(-(ᶜwₚ) / ᶜρ)
+                
         end
+        # TODO: add moments here
+        # moments_info = 
+        #     ((@name(c.moments), @name(weighted_vt)))
+        # MatrixFields.unrolled_foreach(precip_info) do (moments_name, vt_name)
+        #     MatrixFields.has_field(Y, moments_name) || return
+        #     ∂ᶜρqₚ_err_∂ᶜρqₚ = matrix[moments_name, moments_name]
+        #     ᶜwₚ = MatrixFields.get_field(p, wₚ_name)
+        #     ᶠtmp = p.ᶠtemp_CT3
+        #     @. ᶠtmp = CT3(unit_basis_vector_data(CT3, ᶠlg)) * ᶠwinterp(ᶜJ, ᶜρ)
+        #     @. ∂ᶜρqₚ_err_∂ᶜρqₚ +=
+        #         dtγ * -(ᶜprecipdivᵥ_matrix()) ⋅ DiagonalMatrixRow(ᶠtmp) ⋅
+        #         ᶠright_bias_matrix() ⋅ DiagonalMatrixRow(-(ᶜwₚ) / ᶜρ)
+                
+        # end
+        
     end
 
     if p.atmos.turbconv_model isa PrognosticEDMFX
