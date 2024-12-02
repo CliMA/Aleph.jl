@@ -23,9 +23,9 @@ steps:
     - nsys stats --report cuda_gpu_trace report_0.nsys-rep --force-export true
     - nsys stats --report cuda_gpu_trace report_0.nsys-rep --force-export true | grep -E "memcpy (Peer-to-Peer|PtoP)"
     agents:
-    queue: new-central
-    slurm_ntasks: 2
-    slurm_gpus_per_task: 1
-    slurm_cpus_per_task: 4
-    slurm_time: "00:10:00"
-    modules: climacommon/2024_10_09
+      queue: new-central
+      slurm_ntasks: 2
+      slurm_gpus_per_task: 1
+      slurm_cpus_per_task: 4
+      slurm_time: "00:10:00"
+      modules: climacommon/2024_10_09
