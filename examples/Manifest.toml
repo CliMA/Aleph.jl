@@ -428,7 +428,9 @@ version = "0.7.38"
 
 [[deps.ClimaUtilities]]
 deps = ["Artifacts", "ClimaComms", "Dates"]
-git-tree-sha1 = "cd699551a7c9f721363bbf92b2c61c436b1a3959"
+git-tree-sha1 = "b277ff2114693ce180c34ff1d7ad8672d1a36032"
+repo-rev = "gb/split_vert_horiz_interpolation"
+repo-url = "https://github.com/CliMA/ClimaUtilities.jl.git"
 uuid = "b3f4f4ca-9299-4f7f-bd9b-81e1242a7513"
 version = "0.1.20"
 weakdeps = ["Adapt", "CUDA", "ClimaCore", "ClimaCoreTempestRemap", "Interpolations", "NCDatasets"]
