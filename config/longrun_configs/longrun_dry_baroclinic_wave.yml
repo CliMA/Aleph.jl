@@ -2,9 +2,13 @@ h_elem: 30
 z_elem: 63
 dz_bottom: 30.0
 dt: "90secs"
-t_end: "120days"
+t_end: "30days"
 initial_condition: "DryBaroclinicWave"
 dt_save_state_to_disk: "10days"
+check_conservation: true
 diagnostics:
   - short_name: [pfull, wa, va, rv, ke]
     period: 1days
+  - short_name: [massa, energya]
+    period: 1days
+    writer: dict

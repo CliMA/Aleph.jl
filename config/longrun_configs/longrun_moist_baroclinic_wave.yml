@@ -2,11 +2,17 @@ h_elem: 30
 z_elem: 63
 dz_bottom: 30.0
 dt: "90secs"
-t_end: "120days"
+t_end: "30days"
 initial_condition: "MoistBaroclinicWave"
 moist: "equil"
+prognostic_surface: "PrognosticSurfaceTemperature"
 precip_model: "0M"
 dt_save_state_to_disk: "10days"
+check_conservation: true
+toml: [toml/sphere_baroclinic_wave_rhoe_equilmoist_expvdiff.toml]
 diagnostics:
   - short_name: [pfull, wa, va, rv, hus, ke]
     period: 1days
+  - short_name: [massa, energya, watera, energyo, watero]
+    period: 1days
+    writer: dict
