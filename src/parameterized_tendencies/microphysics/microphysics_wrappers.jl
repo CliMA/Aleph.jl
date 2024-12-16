@@ -41,7 +41,14 @@ function cloud_sources(cm_params::CMP.CloudLiquid{FT}, thp, ts, dt) where {FT}
     q = TD.PhasePartition(thp, ts)
     ρ = TD.air_density(thp, ts)
 
-    S = CMNe.conv_q_vap_to_q_liq_ice_MM2015(cm_params, thp, q, ρ, Tₐ(thp, ts))
+    # TODO
+    #S = CMNe.conv_q_vap_to_q_liq_ice_MM2015(cm_params, thp, q, ρ, Tₐ(thp, ts))
+
+    (; τ_relax) = cm_params
+    pᵥ_sat_liq = TD.saturation_vapor_pressure(thp, Tₐ(thp, ts), TD.Liquid())
+    qᵥ_sat_liq = TD.q_vap_saturation_from_density(thp, Tₐ(thp, ts), ρ, pᵥ_sat_liq)
+
+    S = (qᵥ(thp, ts) - qᵥ_sat_liq) / τ_relax
 
     # keeping the same limiter for now
     return ifelse(
@@ -55,7 +62,13 @@ function cloud_sources(cm_params::CMP.CloudIce{FT}, thp, ts, dt) where {FT}
     q = TD.PhasePartition(thp, ts)
     ρ = TD.air_density(thp, ts)
 
-    S = CMNe.conv_q_vap_to_q_liq_ice_MM2015(cm_params, thp, q, ρ, Tₐ(thp, ts))
+    # TODO
+    #S = CMNe.conv_q_vap_to_q_liq_ice_MM2015(cm_params, thp, q, ρ, Tₐ(thp, ts))
+    (; τ_relax) = cm_params
+    pᵥ_sat_ice = TD.saturation_vapor_pressure(thp, Tₐ(thp, ts), TD.Ice())
+    qᵥ_sat_ice = TD.q_vap_saturation_from_density(thp, Tₐ(thp, ts), ρ, pᵥ_sat_ice)
+
+    S = (qᵥ(thp, ts) - qᵥ_sat_ice) / τ_relax
 
     # keeping the same limiter for now
     return ifelse(
