@@ -1,5 +1,5 @@
 h_elem: 16
-z_max: 65000.0
+z_max: 60000.0
 z_elem: 63
 dz_bottom: 30.0
 rayleigh_sponge: true
@@ -7,14 +7,26 @@ viscous_sponge: true
 implicit_diffusion: true
 approximate_linear_solve_iters: 2
 dt: "120secs"
-t_end: "360days"
-dt_save_state_to_disk: "10days"
+t_end: "6days"
+dt_save_to_sol: "1days"
+dt_save_state_to_disk: "1days"
 cloud_model: "grid_scale"
 moist: "nonequil"
-precip_model: "1M"
+precip_model: "0M"
 rad: "allskywithclear"
 dt_rad: "1hours"
 dt_cloud_fraction: "1hours"
+insolation: "timevarying"
+prescribe_ozone: true
+aerosol_radiation: true
+prescribed_aerosols: ["CB1", "CB2", "DST01", "OC1", "OC2", "SO4", "SSLT01"]
 surface_setup: "DefaultMoninObukhov"
 vert_diff: "DecayWithHeightDiffusion"
 toml: [toml/longrun_aquaplanet.toml]
+turbconv: ~
+ode_algo: ARS343
+netcdf_output_at_levels: true
+output_dir: "/central/scratch/ajaruga/"
+diagnostics:
+  - short_name: [ts, ta, thetaa, ha, pfull, rhoa, ua, va, wa, hur, hus, cl, clw, cli, hussfc, evspsbl, pr]
+    period: 1hours
