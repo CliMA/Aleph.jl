@@ -14,3 +14,4 @@ dt_save_to_sol: "Inf"
 rad: "allskywithclear"
 log_progress: false
 perf_summary: true
+log_to_file: false

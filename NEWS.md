@@ -14,6 +14,13 @@ See the  [documentation](https://clima.github.io/ClimaAtmos.jl/dev/contributor_g
 
 ### Features
 
+### File Logging
+
+`ClimaAtmos` now supports logging to stdout and file simultaneously using
+`ClimaComms.FileLogger`. This option is enabled by default. To disable,
+run with `log_to_file = false`. See [ClimaComms documentation](https://clima.github.io/ClimaComms.jl/dev/logging/)
+ for more background on logging.
+
 v0.28.3
 -------
 ### Read CO2 from file
