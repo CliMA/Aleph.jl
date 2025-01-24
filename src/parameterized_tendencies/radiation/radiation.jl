@@ -121,10 +121,12 @@ function radiation_model_cache(
                 "DST02",
                 "DST03",
                 "DST04",
+                "DST05",
                 "SSLT01",
                 "SSLT02",
                 "SSLT03",
                 "SSLT04",
+                "SSLT05",
                 "SO4",
                 "CB1",
                 "CB2",
@@ -248,7 +250,7 @@ function radiation_model_cache(
                     kwargs...,
                     # assuming fixed aerosol radius
                     center_dust_radius = 0.55,
-                    center_ss_radius = 11.5,
+                    center_ss_radius = 5.9,
                     center_dust_column_mass_density = NaN, # initialized in callback
                     center_ss_column_mass_density = NaN, # initialized in callback
                     center_so4_column_mass_density = NaN, # initialized in callback

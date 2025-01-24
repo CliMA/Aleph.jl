@@ -205,7 +205,7 @@ NVTX.@annotate function rrtmgp_model_callback!(integrator)
                 axes(Y.c),
             )
             @. ᶜaero_conc = 0
-            for prescribed_aerosol_name in [:DST01, :DST02, :DST03, :DST04]
+            for prescribed_aerosol_name in [:DST01, :DST02, :DST03, :DST04, :DST05]
                 if prescribed_aerosol_name in
                    propertynames(p.tracers.prescribed_aerosols_field)
                     aerosol_field = getproperty(
@@ -221,7 +221,7 @@ NVTX.@annotate function rrtmgp_model_callback!(integrator)
                 axes(Y.c),
             )
             @. ᶜaero_conc = 0
-            for prescribed_aerosol_name in [:SSLT01, :SSLT02, :SSLT03, :SSLT04]
+            for prescribed_aerosol_name in [:SSLT01, :SSLT02, :SSLT03, :SSLT04, :SSLT05]
                 if prescribed_aerosol_name in
                    propertynames(p.tracers.prescribed_aerosols_field)
                     aerosol_field = getproperty(
