@@ -152,17 +152,10 @@ function implicit_vertical_advection_tendency!(Yₜ, Y, p, t)
     # Central advection of active tracers (e_tot and q_tot)
     vertical_transport!(Yₜ.c.ρe_tot, ᶜJ, Y.c.ρ, ᶠu³, ᶜh_tot, dt, Val(:none))
     @. Yₜ.c.ρe_tot -= ᶜprecipdivᵥ(ᶠwinterp(ᶜJ, Y.c.ρ) * ᶠright_bias(-(ᶜwₕhₜ)))
-
     if !(moisture_model isa DryModel)
-        vertical_transport!(
-            Yₜ.c.ρq_tot,
-            ᶜJ,
-            Y.c.ρ,
-            ᶠu³,
-            ᶜspecific.q_tot,
-            dt,
-            Val(:none),
-        )
+        @. p.scratch.ᶜtemp_scalar_3 = Y.c.ρq_tot / Y.c.ρ
+        q_tot = p.scratch.ᶜtemp_scalar_3
+        vertical_transport!(Yₜ.c.ρq_tot, ᶜJ, Y.c.ρ, ᶠu³, q_tot, dt, Val(:none))
         @. Yₜ.c.ρq_tot -=
             ᶜprecipdivᵥ(ᶠwinterp(ᶜJ, Y.c.ρ) * ᶠright_bias(-(ᶜwₜqₜ)))
     end
