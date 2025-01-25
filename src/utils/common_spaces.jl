@@ -148,7 +148,7 @@ function make_hybrid_spaces(
         )
         # Coefficient for horizontal diffusion may alternatively be
         # determined from the empirical parameters suggested by
-        # E3SM  v1/v2 Topography documentation found here: 
+        # E3SM  v1/v2 Topography documentation found here:
         # https://acme-climate.atlassian.net/wiki/spaces/DOC/pages/1456603764/V1+Topography+GLL+grids
         z_surface = @. mask(z_surface)
         if parsed_args["mesh_warp_type"] == "SLEVE"

@@ -174,11 +174,16 @@ function CTh_vector_type(space)
         Geometry.Contravariant1Vector
     elseif full_CT_axis == Geometry.Contravariant23Axis()
         Geometry.Contravariant2Vector
+    elseif full_CT_axis == Geometry.Contravariant3Axis()
+        # Even though there is no horizontal space, horizontal curl operators return the same
+        # type as if there was a 2d horizontal space
+        # TODO: I have no idea if this is OK
+        Geometry.Contravariant12Vector
     else
         error("$full_CT_axis is missing either vertical or horizontal sub-axes")
     end
 end
-
+has_topography(space::Spaces.FiniteDifferenceSpace) = false
 has_topography(space) = Spaces.grid(space).hypsography != Spaces.Grids.Flat()
 
 """
@@ -264,6 +269,10 @@ Return whether the underlying horizontal space required DSS or not.
 function do_dss(space::Spaces.AbstractSpace)
     return Spaces.quadrature_style(Spaces.horizontal_space(space)) isa
            Quadratures.GLL
+end
+
+function do_dss(space::Spaces.FiniteDifferenceSpace)
+    return false
 end
 
 
@@ -458,16 +467,7 @@ function promote_period(period::Dates.OtherPeriod)
 end
 
 function iscolumn(space)
-    # TODO: Our columns are 2+1D boxes with one element at the base. Fix this
-    isbox =
-        Meshes.domain(Spaces.topology(Spaces.horizontal_space(space))) isa
-        Domains.RectangleDomain
-    isbox || return false
-    has_one_element =
-        Meshes.nelements(
-            Spaces.topology(Spaces.horizontal_space(space)).mesh,
-        ) == 1
-    has_one_element && return true
+    return space isa Spaces.FiniteDifferenceSpace
 end
 
 function issphere(space)

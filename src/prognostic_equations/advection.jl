@@ -91,7 +91,8 @@ NVTX.@annotate function explicit_vertical_advection_tendency!(Yₜ, Y, p, t)
 
     if point_type <: Geometry.Abstract3DPoint
         @. ᶜω³ = curlₕ(Y.c.uₕ)
-    elseif point_type <: Geometry.Abstract2DPoint
+    elseif point_type <: Geometry.Abstract2DPoint ||
+           point_type <: Geometry.Abstract1DPoint
         @. ᶜω³ = zero(ᶜω³)
     end
 
@@ -99,9 +100,11 @@ NVTX.@annotate function explicit_vertical_advection_tendency!(Yₜ, Y, p, t)
     for j in 1:n
         @. ᶠω¹²ʲs.:($$j) = ᶠω¹²
     end
-    @. ᶠω¹² += CT12(curlₕ(Y.f.u₃))
-    for j in 1:n
-        @. ᶠω¹²ʲs.:($$j) += CT12(curlₕ(Y.f.sgsʲs.:($$j).u₃))
+    if !iscolumn(axes(Y.c))
+        @. ᶠω¹² += CT12(curlₕ(Y.f.u₃))
+        for j in 1:n
+            @. ᶠω¹²ʲs.:($$j) += CT12(curlₕ(Y.f.sgsʲs.:($$j).u₃))
+        end
     end
     # Without the CT12(), the right-hand side would be a CT1 or CT2 in 2D space.
 

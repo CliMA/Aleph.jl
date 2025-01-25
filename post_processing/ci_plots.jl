@@ -403,7 +403,7 @@ make_plots_generic(
     simulation_path,
     vars,
     time = LAST_SNAP,
-    x = 0.0, # Our columns are still 3D objects...
+    x = 0.0,
     y = 0.0,
     more_kwargs = YLINEARSCALE,
 )
@@ -419,7 +419,7 @@ make_plots_generic(
     simulation_path,
     vars,
     time = LAST_SNAP,
-    x = 0.0, # Our columns are still 3D objects...
+    x = 0.0,
     y = 0.0,
     more_kwargs = YLINEARSCALE,
 )
@@ -481,15 +481,21 @@ function make_plots(::ColumnPlots, output_paths::Vector{<:AbstractString})
     simdirs = SimDir.(output_paths)
     short_names = ["ta", "wa"]
     vars = map_comparison(get, simdirs, short_names)
-
+    slice_indices = ()
+    # columns were previously 3d, so they may need to be sliced for reproducibilty testing
+    for var in vars
+        if length(var.dims) > 2
+            slice_indices = (x = 0.0, y = 0.0)
+            break
+        end
+    end
     make_plots_generic(
         output_paths,
         vars,
         time = LAST_SNAP,
-        x = 0.0, # Our columns are still 3D objects...
-        y = 0.0,
         MAX_NUM_COLS = length(simdirs),
         more_kwargs = YLINEARSCALE,
+        slice_indices...,
     )
 end
 
@@ -521,10 +527,18 @@ function make_plots(
     simdir = simdirs[1]
 
     short_names = ["hus", "clw", "cli", "husra", "hussn", "ta"]
-    vars = [
-        slice(get(simdir; short_name), x = 0.0, y = 0.0) for
-        short_name in short_names
-    ]
+    is_purely_vertical = true
+    vars = [get(simdir; short_name) for short_name in short_names]
+    # make plotting backwards compatible with 3d columns
+    for var in vars
+        if length(var.dims) > 2
+            is_purely_vertical = false
+            break
+        end
+    end
+    vars = is_purely_vertical ? vars : map(vars) do var
+        return slice(var, x = 0.0, y = 0.0)
+    end
 
     # We first prepare the axes with all the nice labels with ClimaAnalysis, then we use
     # CairoMakie to add the additional lines.
@@ -565,11 +579,15 @@ function make_plots(
 
     # surface_precipitation
     surface_precip = read_var(simdir.variable_paths["pr"]["inst"]["10s"])
-    viz.line_plot1D!(
-        fig,
-        slice(surface_precip, x = 0.0, y = 0.0);
-        p_loc = [3, 1:3],
-    )
+    if is_purely_vertical
+        viz.line_plot1D!(fig, surface_precip; p_loc = [3, 1:3])
+    else
+        viz.line_plot1D!(
+            fig,
+            slice(surface_precip, x = 0.0, y = 0.0);
+            p_loc = [3, 1:3],
+        )
+    end
 
     file_path = joinpath(output_paths[1], "summary.pdf")
     CairoMakie.save(file_path, fig)
@@ -1325,13 +1343,14 @@ function make_plots(
     short_name_tuples = pair_edmf_names(short_names)
     var_groups_zt =
         map_comparison(simdirs, short_name_tuples) do simdir, name_tuple
-            return [
-                slice(
-                    get(simdir; short_name, reduction, period),
-                    x = 0.0,
-                    y = 0.0,
-                ) for short_name in name_tuple
-            ]
+            for short_name in name_tuple
+                var = get(simdir; short_name, reduction, period)
+                if length(var.dims) > 2
+                    return [slice(var, x = 0.0, y = 0.0)]
+                else
+                    return [var]
+                end
+            end
         end
 
     var_groups_z = [
