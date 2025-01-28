@@ -12,7 +12,7 @@ env:
   JULIA_DEPOT_PATH: "${BUILDKITE_BUILD_PATH}/${BUILDKITE_PIPELINE_SLUG}/depot/default"
   CONFIG_PATH: "config/model_configs"
   MBW_SCALING_CONFIG_PATH: "config/mbw_scaling_configs"
-  CPU_TYPE: "skylake"
+  CPU_TYPE: "icelake"
 
 steps:
   - label: "init :computer:"
