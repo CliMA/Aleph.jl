@@ -1,4 +1,4 @@
-205
+206
 
 # **README**
 #
@@ -20,6 +20,10 @@
 
 
 #=
+
+206
+- Modify curl terms to ensure conservation of vorticity
+- Update velocity and kinetic energy reconstructions so that they match the dycore paper
 
 205
 - A ClimaTimeSteppers update

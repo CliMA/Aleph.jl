@@ -6,14 +6,13 @@ import Thermodynamics as TD
 import ClimaCore: Spaces, Fields
 
 """
-    set_prognostic_edmf_precomputed_quantities!(Y, p, ᶠuₕ³, t)
+    set_prognostic_edmf_precomputed_quantities!(Y, p, t)
 
 Updates the edmf environment precomputed quantities stored in `p` for edmfx.
 """
 NVTX.@annotate function set_prognostic_edmf_precomputed_quantities_environment!(
     Y,
     p,
-    ᶠuₕ³,
     t,
 )
     @assert !(p.atmos.moisture_model isa DryModel)
@@ -22,7 +21,7 @@ NVTX.@annotate function set_prognostic_edmf_precomputed_quantities_environment!(
     (; turbconv_model) = p.atmos
     (; ᶜΦ,) = p.core
     (; ᶜp, ᶜh_tot, ᶜK) = p.precomputed
-    (; ᶜtke⁰, ᶜρa⁰, ᶠu₃⁰, ᶜu⁰, ᶠu³⁰, ᶜK⁰, ᶜts⁰, ᶜρ⁰, ᶜmse⁰, ᶜq_tot⁰) =
+    (; ᶜtke⁰, ᶜρa⁰, ᶠu₃⁰, ᶜu⁰, ᶠu³⁰, ᶠu⁰, ᶜK⁰, ᶜts⁰, ᶜρ⁰, ᶜmse⁰, ᶜq_tot⁰) =
         p.precomputed
 
     @. ᶜρa⁰ = ρa⁰(Y.c)
@@ -42,15 +41,16 @@ NVTX.@annotate function set_prognostic_edmf_precomputed_quantities_environment!(
         turbconv_model,
     )
     set_sgs_ᶠu₃!(u₃⁰, ᶠu₃⁰, Y, turbconv_model)
-    set_velocity_quantities!(ᶜu⁰, ᶠu³⁰, ᶜK⁰, ᶠu₃⁰, Y.c.uₕ, ᶠuₕ³)
+    set_ᶜu_and_ᶜK!(ᶜu⁰, ᶜK⁰, Y.c.uₕ, ᶠu₃⁰)
     # @. ᶜK⁰ += ᶜtke⁰
     @. ᶜts⁰ = TD.PhaseEquil_phq(thermo_params, ᶜp, ᶜmse⁰ - ᶜΦ, ᶜq_tot⁰)
     @. ᶜρ⁰ = TD.air_density(thermo_params, ᶜts⁰)
+    set_ᶠu³_and_ᶠu!(ᶠu³⁰, ᶠu⁰, ᶜu⁰, ᶠu₃⁰, ᶜρ⁰)
     return nothing
 end
 
 """
-    set_prognostic_edmf_precomputed_quantities_draft_and_bc!(Y, p, ᶠuₕ³, t)
+    set_prognostic_edmf_precomputed_quantities_draft_and_bc!(Y, p, t)
 
 Updates the draft thermo state and boundary conditions
 precomputed quantities stored in `p` for edmfx.
@@ -58,7 +58,6 @@ precomputed quantities stored in `p` for edmfx.
 NVTX.@annotate function set_prognostic_edmf_precomputed_quantities_draft_and_bc!(
     Y,
     p,
-    ᶠuₕ³,
     t,
 )
     (; moisture_model, turbconv_model) = p.atmos
@@ -74,12 +73,13 @@ NVTX.@annotate function set_prognostic_edmf_precomputed_quantities_draft_and_bc!
 
     (; ᶜΦ,) = p.core
     (; ᶜspecific, ᶜp, ᶜh_tot, ᶜK) = p.precomputed
-    (; ᶜuʲs, ᶠu³ʲs, ᶜKʲs, ᶠKᵥʲs, ᶜtsʲs, ᶜρʲs) = p.precomputed
+    (; ᶜuʲs, ᶠu³ʲs, ᶠuʲs, ᶜKʲs, ᶠKᵥʲs, ᶜtsʲs, ᶜρʲs) = p.precomputed
     (; ustar, obukhov_length, buoyancy_flux) = p.precomputed.sfc_conditions
 
     for j in 1:n
         ᶜuʲ = ᶜuʲs.:($j)
         ᶠu³ʲ = ᶠu³ʲs.:($j)
+        ᶠuʲ = ᶠuʲs.:($j)
         ᶜKʲ = ᶜKʲs.:($j)
         ᶠKᵥʲ = ᶠKᵥʲs.:($j)
         ᶠu₃ʲ = Y.f.sgsʲs.:($j).u₃
@@ -88,10 +88,11 @@ NVTX.@annotate function set_prognostic_edmf_precomputed_quantities_draft_and_bc!
         ᶜmseʲ = Y.c.sgsʲs.:($j).mse
         ᶜq_totʲ = Y.c.sgsʲs.:($j).q_tot
 
-        set_velocity_quantities!(ᶜuʲ, ᶠu³ʲ, ᶜKʲ, ᶠu₃ʲ, Y.c.uₕ, ᶠuₕ³)
+        set_ᶜu_and_ᶜK!(ᶜuʲ, ᶜKʲ, Y.c.uₕ, ᶠu₃ʲ)
         @. ᶠKᵥʲ = (adjoint(CT3(ᶠu₃ʲ)) * ᶠu₃ʲ) / 2
         @. ᶜtsʲ = TD.PhaseEquil_phq(thermo_params, ᶜp, ᶜmseʲ - ᶜΦ, ᶜq_totʲ)
         @. ᶜρʲ = TD.air_density(thermo_params, ᶜtsʲ)
+        set_ᶠu³_and_ᶠu!(ᶠu³ʲ, ᶠuʲ, ᶜuʲ, ᶠu₃ʲ, ᶜρʲ)
 
         # EDMFX boundary condition:
 
@@ -195,7 +196,7 @@ NVTX.@annotate function set_prognostic_edmf_precomputed_quantities_closures!(
     FT = eltype(params)
     n = n_mass_flux_subdomains(turbconv_model)
 
-    (; ᶜtke⁰, ᶜu, ᶜp, ᶜρa⁰, ᶠu³⁰, ᶜts⁰, ᶜq_tot⁰) = p.precomputed
+    (; ᶜtke⁰, ᶜu, ᶜp, ᶜρa⁰, ᶠu³⁰, ᶠu⁰, ᶜts⁰, ᶜq_tot⁰) = p.precomputed
     (;
         ᶜmixing_length_tuple,
         ᶜmixing_length,
@@ -303,8 +304,6 @@ NVTX.@annotate function set_prognostic_edmf_precomputed_quantities_closures!(
     )
 
     # TODO: Currently the shear production only includes vertical gradients
-    ᶠu⁰ = p.scratch.ᶠtemp_C123
-    @. ᶠu⁰ = C123(ᶠinterp(Y.c.uₕ)) + C123(ᶠu³⁰)
     ᶜstrain_rate = p.scratch.ᶜtemp_UVWxUVW
     compute_strain_rate_center!(ᶜstrain_rate, ᶠu⁰)
     @. ᶜstrain_rate_norm = norm_sqr(ᶜstrain_rate)

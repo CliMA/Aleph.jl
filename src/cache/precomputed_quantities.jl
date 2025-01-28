@@ -48,6 +48,7 @@ function precomputed_quantities(Y, atmos)
         ᶜspecific = specific_gs.(Y.c),
         ᶜu = similar(Y.c, C123{FT}),
         ᶠu³ = similar(Y.f, CT3{FT}),
+        ᶠu = similar(Y.f, CT123{FT}),
         ᶜwₜqₜ = similar(Y.c, Geometry.WVector{FT}),
         ᶜwₕhₜ = similar(Y.c, Geometry.WVector{FT}),
         ᶜK = similar(Y.c, FT),
@@ -86,6 +87,7 @@ function precomputed_quantities(Y, atmos)
             ᶠu₃⁰ = similar(Y.f, C3{FT}),
             ᶜu⁰ = similar(Y.c, C123{FT}),
             ᶠu³⁰ = similar(Y.f, CT3{FT}),
+            ᶠu⁰ = similar(Y.f, CT123{FT}),
             ᶜK⁰ = similar(Y.c, FT),
             ᶜmse⁰ = similar(Y.c, FT),
             ᶜq_tot⁰ = similar(Y.c, FT),
@@ -97,6 +99,7 @@ function precomputed_quantities(Y, atmos)
             ρatke_flux = similar(Fields.level(Y.f, half), C3{FT}),
             ᶜuʲs = similar(Y.c, NTuple{n, C123{FT}}),
             ᶠu³ʲs = similar(Y.f, NTuple{n, CT3{FT}}),
+            ᶠuʲs = similar(Y.f, NTuple{n, CT123{FT}}),
             ᶜKʲs = similar(Y.c, NTuple{n, FT}),
             ᶠKᵥʲs = similar(Y.f, NTuple{n, FT}),
             ᶜtsʲs = similar(Y.c, NTuple{n, TST}),
@@ -186,29 +189,24 @@ function precomputed_quantities(Y, atmos)
     )
 end
 
-# Interpolates the third contravariant component of Y.c.uₕ to cell faces.
-function set_ᶠuₕ³!(ᶠuₕ³, Y)
-    ᶜJ = Fields.local_geometry_field(Y.c).J
-    @. ᶠuₕ³ = ᶠwinterp(Y.c.ρ * ᶜJ, CT3(Y.c.uₕ))
-    return nothing
-end
-
 """
-    set_velocity_at_surface!(Y, ᶠuₕ³, turbconv_model)
+    set_velocity_at_surface!(Y, turbconv_model)
 
 Modifies `Y.f.u₃` so that `ᶠu³` is 0 at the surface. Specifically, since
-`u³ = uₕ³ + u³ = uₕ³ + u₃ * g³³`, setting `u³` to 0 gives `u₃ = -uₕ³ / g³³`. If
-the `turbconv_model` is EDMFX, the `Y.f.sgsʲs` are also modified so that each
-`u₃ʲ` is equal to `u₃` at the surface.
+`u³ = g³ʰ uₕ + g³³ u₃`, setting `u³` to 0 gives `u₃ = -(g³³)⁻¹ g³ʰ uₕ`. If the
+`turbconv_model` is EDMFX, the `Y.f.sgsʲs` are also modified so that each `u₃ʲ`
+is equal to `u₃` at the surface.
 """
-function set_velocity_at_surface!(Y, ᶠuₕ³, turbconv_model)
-    sfc_u₃ = Fields.level(Y.f.u₃.components.data.:1, half)
-    sfc_uₕ³ = Fields.level(ᶠuₕ³.components.data.:1, half)
-    sfc_g³³ = g³³_field(sfc_u₃)
-    @. sfc_u₃ = -sfc_uₕ³ / sfc_g³³ # u³ = uₕ³ + w³ = uₕ³ + w₃ * g³³
+function set_velocity_at_surface!(Y, turbconv_model)
+    bot_uₕ = Fields.level(Y.c.uₕ, 1)
+    sfc_u₃ = Fields.level(Y.f.u₃, half)
+    sfc_gⁱʲ = Fields.local_geometry_field(sfc_u₃).gⁱʲ
+    shifted_sfc_u₃ = Fields.Field(Fields.field_values(sfc_u₃), axes(bot_uₕ))
+    shifted_sfc_gⁱʲ = Fields.Field(Fields.field_values(sfc_gⁱʲ), axes(bot_uₕ))
+    @. shifted_sfc_u₃ = -inv(g³³(shifted_sfc_gⁱʲ)) * CT3(bot_uₕ)
     if turbconv_model isa PrognosticEDMFX
         for j in 1:n_mass_flux_subdomains(turbconv_model)
-            sfc_u₃ʲ = Fields.level(Y.f.sgsʲs.:($j).u₃.components.data.:1, half)
+            sfc_u₃ʲ = Fields.level(Y.f.sgsʲs.:($j).u₃, half)
             @. sfc_u₃ʲ = sfc_u₃
         end
     end
@@ -221,15 +219,12 @@ end
 Modifies `Y.f.u₃` so that `u₃` is 0 at the model top.
 """
 function set_velocity_at_top!(Y, turbconv_model)
-    top_u₃ = Fields.level(
-        Y.f.u₃.components.data.:1,
-        Spaces.nlevels(axes(Y.c)) + half,
-    )
-    @. top_u₃ = 0
+    top_u₃ = Fields.level(Y.f.u₃, Spaces.nlevels(axes(Y.c)) + half)
+    @. top_u₃ = C3(0)
     if turbconv_model isa PrognosticEDMFX
         for j in 1:n_mass_flux_subdomains(turbconv_model)
             top_u₃ʲ = Fields.level(
-                Y.f.sgsʲs.:($j).u₃.components.data.:1,
+                Y.f.sgsʲs.:($j).u₃,
                 Spaces.nlevels(axes(Y.c)) + half,
             )
             @. top_u₃ʲ = top_u₃
@@ -238,12 +233,18 @@ function set_velocity_at_top!(Y, turbconv_model)
     return nothing
 end
 
-# This is used to set the grid-scale velocity quantities ᶜu, ᶠu³, ᶜK based on
-# ᶠu₃, and it is also used to set the SGS quantities based on ᶠu₃⁰ and ᶠu₃ʲ.
-function set_velocity_quantities!(ᶜu, ᶠu³, ᶜK, ᶠu₃, ᶜuₕ, ᶠuₕ³)
-    @. ᶜu = C123(ᶜuₕ) + ᶜinterp(C123(ᶠu₃))
-    @. ᶠu³ = ᶠuₕ³ + CT3(ᶠu₃)
+function set_ᶜu_and_ᶜK!(ᶜu, ᶜK, ᶜuₕ, ᶠu₃)
+    @. ᶜu = C123(ᶜuₕ) + C123(ᶜinterp(ᶠu₃))
     compute_kinetic!(ᶜK, ᶜuₕ, ᶠu₃)
+    return nothing
+end
+
+function set_ᶠu³_and_ᶠu!(ᶠu³, ᶠu, ᶜu, ᶠu₃, ᶜρ)
+    ᶜJ = Fields.local_geometry_field(ᶜu).J
+    ᶜgⁱʲ = Fields.local_geometry_field(ᶜu).gⁱʲ
+    @. ᶠu³ =
+        ᶠwinterp(ᶜρ * ᶜJ, CT3(C12(ᶜu))) + ᶠwinterp(ᶜρ * ᶜJ, g³³(ᶜgⁱʲ)) * ᶠu₃
+    @. ᶠu = CT123(ᶠwinterp(ᶜρ * ᶜJ, CT12(ᶜu))) + CT123(ᶠu³)
     return nothing
 end
 
@@ -472,18 +473,17 @@ NVTX.@annotate function set_precomputed_quantities!(Y, p, t)
     n = n_mass_flux_subdomains(turbconv_model)
     thermo_args = (thermo_params, moisture_model)
     (; ᶜΦ) = p.core
-    (; ᶜspecific, ᶜu, ᶠu³, ᶜK, ᶜts, ᶜp) = p.precomputed
-    ᶠuₕ³ = p.scratch.ᶠtemp_CT3
+    (; ᶜspecific, ᶜu, ᶠu³, ᶠu, ᶜK, ᶜts, ᶜp) = p.precomputed
 
     @. ᶜspecific = specific_gs(Y.c)
-    set_ᶠuₕ³!(ᶠuₕ³, Y)
 
     # TODO: We might want to move this to dss! (and rename dss! to something
     # like enforce_constraints!).
-    set_velocity_at_surface!(Y, ᶠuₕ³, turbconv_model)
+    set_velocity_at_surface!(Y, turbconv_model)
     set_velocity_at_top!(Y, turbconv_model)
 
-    set_velocity_quantities!(ᶜu, ᶠu³, ᶜK, Y.f.u₃, Y.c.uₕ, ᶠuₕ³)
+    set_ᶜu_and_ᶜK!(ᶜu, ᶜK, Y.c.uₕ, Y.f.u₃)
+    set_ᶠu³_and_ᶠu!(ᶠu³, ᶠu, ᶜu, Y.f.u₃, Y.c.ρ)
     if n > 0
         # TODO: In the following increments to ᶜK, we actually need to add
         # quantities of the form ᶜρaχ⁰ / ᶜρ⁰ and ᶜρaχʲ / ᶜρʲ to ᶜK, rather than
@@ -550,8 +550,8 @@ NVTX.@annotate function set_precomputed_quantities!(Y, p, t)
     end
 
     if turbconv_model isa PrognosticEDMFX
-        set_prognostic_edmf_precomputed_quantities_draft_and_bc!(Y, p, ᶠuₕ³, t)
-        set_prognostic_edmf_precomputed_quantities_environment!(Y, p, ᶠuₕ³, t)
+        set_prognostic_edmf_precomputed_quantities_draft_and_bc!(Y, p, t)
+        set_prognostic_edmf_precomputed_quantities_environment!(Y, p, t)
         set_prognostic_edmf_precomputed_quantities_closures!(Y, p, t)
         set_prognostic_edmf_precomputed_quantities_precipitation!(
             Y,
@@ -703,21 +703,22 @@ function output_prognostic_sgs_quantities(Y, p, t)
     (; turbconv_model) = p.atmos
     thermo_params = CAP.thermodynamics_params(p.params)
     (; ᶜρa⁰, ᶜρ⁰, ᶜtsʲs) = p.precomputed
-    ᶠuₕ³ = p.scratch.ᶠtemp_CT3
-    set_ᶠuₕ³!(ᶠuₕ³, Y)
-    (ᶠu₃⁺, ᶜu⁺, ᶠu³⁺, ᶜK⁺) =
+    (ᶠu₃⁺, ᶜu⁺, ᶠu³⁺, ᶠu⁺, ᶜK⁺) =
         similar.((
             p.precomputed.ᶠu₃⁰,
             p.precomputed.ᶜu⁰,
             p.precomputed.ᶠu³⁰,
+            p.precomputed.ᶠu⁰,
             p.precomputed.ᶜK⁰,
         ))
     set_sgs_ᶠu₃!(u₃⁺, ᶠu₃⁺, Y, turbconv_model)
-    set_velocity_quantities!(ᶜu⁺, ᶠu³⁺, ᶜK⁺, ᶠu₃⁺, Y.c.uₕ, ᶠuₕ³)
+    set_ᶜu_and_ᶜK!(ᶜu⁺, ᶜK⁺, Y.c.uₕ, ᶠu₃⁺)
     ᶜts⁺ = ᶜtsʲs.:1
-    ᶜa⁺ = @. draft_area(ρa⁺(Y.c), TD.air_density(thermo_params, ᶜts⁺))
+    ᶜρ⁺ = TD.air_density.(thermo_params, ᶜts⁺)
+    set_ᶠu³_and_ᶠu!(ᶠu³⁺, ᶠu⁺, ᶜu⁺, ᶠu₃⁺, ᶜρ⁺)
+    ᶜa⁺ = @. draft_area(ρa⁺(Y.c), ᶜρ⁺)
     ᶜa⁰ = @. draft_area(ᶜρa⁰, ᶜρ⁰)
-    return (; ᶠu₃⁺, ᶜu⁺, ᶠu³⁺, ᶜK⁺, ᶜts⁺, ᶜa⁺, ᶜa⁰)
+    return (; ᶠu₃⁺, ᶜu⁺, ᶠu³⁺, ᶠu⁺, ᶜK⁺, ᶜts⁺, ᶜa⁺, ᶜa⁰)
 end
 
 """
