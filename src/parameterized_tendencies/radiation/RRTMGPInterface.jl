@@ -831,16 +831,18 @@ function RRTMGPModel(
             # See the lookup table in RRTMGP for the order of aerosols
             aero_size = DA{FT}(undef, n_aerosol_sizes, nlay, ncol)
             aero_mass = DA{FT}(undef, n_aerosols, nlay, ncol)
-            aerosol_size_names = ["dust", "ss"]
+            #aerosol_size_names = ["dust", "ss"]
             aerosol_names =
-                ["dust", "ss", "so4", "bcpi", "bcpo", "ocpi", "ocpo"]
-            for (i, name) in enumerate(aerosol_size_names)
-                set_and_save!(
-                    view(aero_size, i, :, :),
-                    "center_$(name)_radius",
-                    t...,
-                    dict,
-                )
+                ["dust1", "ss1", "so4", "bcpi", "bcpo", "ocpi", "ocpo", "dust2", "dust3", "dust4", "dust5", "ss2", "ss3", "ss4", "ss5"]
+            for (i, name) in enumerate(aerosol_names)
+                if occursin("dust", name) || occursin("ss", name)
+                    set_and_save!(
+                        view(aero_size, i, :, :),
+                        "center_$(name)_radius",
+                        t...,
+                        dict,
+                    )
+                end
             end
             for (i, name) in enumerate(aerosol_names)
                 set_and_save!(

@@ -1977,7 +1977,9 @@ version = "1.11.0"
 
 [[deps.RRTMGP]]
 deps = ["Adapt", "Artifacts", "ClimaComms", "DocStringExtensions", "Random"]
-git-tree-sha1 = "56240e81cd9fa6dde6c860509cb88833920d0d99"
+git-tree-sha1 = "fb35b62209fdf9c38a0f0d777c3cc2c5206a9fe1"
+repo-rev = "zs/ck/aerosol"
+repo-url = "https://github.com/CliMA/RRTMGP.jl.git"
 uuid = "a01a1ee8-cea4-48fc-987c-fc7878d79da1"
 version = "0.19.2"
 weakdeps = ["CUDA", "ClimaParams"]
