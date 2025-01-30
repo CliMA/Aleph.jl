@@ -1,4 +1,4 @@
-module Precompile
+module PrecompileCI
 
 using PrecompileTools
 import ClimaAtmos as CA

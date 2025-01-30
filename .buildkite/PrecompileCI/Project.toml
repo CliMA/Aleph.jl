@@ -1,4 +1,4 @@
-name = "Precompile"
+name = "PrecompileCI"
 uuid = "76d61242-8ec2-4c91-8455-3234246697a2"
 authors = ["nefrathenrici <nat.henrici@gmail.com>"]
 version = "0.1.0"
