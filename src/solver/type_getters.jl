@@ -608,12 +608,13 @@ function args_integrator(parsed_args, Y, p, tspan, ode_algo, callback)
     end
     @info "Define ode function: $s"
     problem = SciMLBase.ODEProblem(func, Y, tspan, p)
+    t_begin, t_end, _ = promote(tspan[1], tspan[2], p.dt)
     saveat = if dt_save_to_sol == Inf
-        tspan[2]
+        promote([t_begin, t_end]...)
     elseif iszero(tspan[2] % dt_save_to_sol)
-        dt_save_to_sol
+        promote([t_begin:dt_save_to_sol:t_end...]...)
     else
-        promote([tspan[1]:dt_save_to_sol:tspan[2]..., tspan[2]]...)
+        promote([t_begin:dt_save_to_sol:t_end..., t_end]...)
     end # ensure that tspan[2] is always saved
     @info "dt_save_to_sol: $dt_save_to_sol, length(saveat): $(length(saveat))"
     args = (problem, ode_algo)
