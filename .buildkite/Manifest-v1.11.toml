@@ -2,7 +2,7 @@
 
 julia_version = "1.11.3"
 manifest_format = "2.0"
-project_hash = "46f0a9409bb0d3c679674a0d7868d43f74e635c6"
+project_hash = "2672c6262229e84cbe73958fb353c7439e1584b1"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "e1ce448a0d7f88168ffe2eeac4549c32d45a42d1"
@@ -399,8 +399,10 @@ uuid = "d934ef94-cdd4-4710-83d6-720549644b70"
 version = "0.3.18"
 
 [[deps.ClimaDiagnostics]]
-deps = ["Accessors", "ClimaComms", "ClimaCore", "Dates", "NCDatasets", "OrderedCollections", "SciMLBase"]
-git-tree-sha1 = "e9ac94af815dcae2a2ab24e54b53e76cca6258b7"
+deps = ["Accessors", "ClimaComms", "ClimaCore", "ClimaUtilities", "Dates", "NCDatasets", "OrderedCollections", "SciMLBase"]
+git-tree-sha1 = "db948bcfcf4b7566ac2446c8a743a6472ab76875"
+repo-rev = "kp/itime"
+repo-url = "https://github.com/CliMA/ClimaDiagnostics.jl.git"
 uuid = "1ecacbb8-0713-4841-9a07-eb5aa8a2d53f"
 version = "0.2.11"
 
@@ -418,7 +420,9 @@ version = "0.1.1"
 
 [[deps.ClimaTimeSteppers]]
 deps = ["ClimaComms", "Colors", "DataStructures", "DiffEqBase", "KernelAbstractions", "Krylov", "LinearAlgebra", "LinearOperators", "NVTX", "SciMLBase", "StaticArrays"]
-git-tree-sha1 = "f03e9f4316d380cdf851ec2c4c55efbfdb064439"
+git-tree-sha1 = "b4b7d6638540dfabbe5bd172578e827f026eb672"
+repo-rev = "kp/itime"
+repo-url = "https://github.com/CliMA/ClimaTimeSteppers.jl.git"
 uuid = "595c0a79-7f3d-439a-bc5a-b232dc3bde79"
 version = "0.8.1"
 weakdeps = ["BenchmarkTools", "CUDA", "OrderedCollections", "PrettyTables", "StatsBase"]
@@ -428,7 +432,9 @@ weakdeps = ["BenchmarkTools", "CUDA", "OrderedCollections", "PrettyTables", "Sta
 
 [[deps.ClimaUtilities]]
 deps = ["Artifacts", "ClimaComms", "Dates"]
-git-tree-sha1 = "ab44b3d5335c1a36fc9f21560a06bff373caca42"
+git-tree-sha1 = "49184e0a055df370caf387df56db4ec06b072378"
+repo-rev = "kp/itime"
+repo-url = "https://github.com/CliMA/ClimaUtilities.jl.git"
 uuid = "b3f4f4ca-9299-4f7f-bd9b-81e1242a7513"
 version = "0.1.21"
 weakdeps = ["Adapt", "CUDA", "ClimaCore", "ClimaCoreTempestRemap", "Interpolations", "NCDatasets"]
