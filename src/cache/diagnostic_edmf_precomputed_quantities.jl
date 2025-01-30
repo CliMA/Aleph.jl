@@ -5,25 +5,16 @@ import NVTX
 import Thermodynamics as TD
 import ClimaCore: Spaces, Fields, RecursiveApply
 
-@inline function kinetic_energy(
-    uₕ_level,
-    u³_halflevel,
-    local_geometry_level,
-    local_geometry_halflevel,
-)
+@inline function kinetic_energy(uₕ_level, u³_halflevel, local_geometry_level)
+    g³³_level = g³³(local_geometry_level.gⁱʲ)
+    uₕʰ_level = CT12(uₕ_level, local_geometry_level)
+    uₕ³_level = CT3(uₕ_level, local_geometry_level)
+    u₃³_level = u³_halflevel - uₕ³_level # assume that u³_level = u³_halflevel
+    u₃_level = inv(g³³_level) * u₃³_level
     return (
-        dot(
-            C123(uₕ_level, local_geometry_level),
-            CT123(uₕ_level, local_geometry_level),
-        ) +
-        dot(
-            C123(u³_halflevel, local_geometry_halflevel),
-            CT123(u³_halflevel, local_geometry_halflevel),
-        ) +
-        2 * dot(
-            CT123(uₕ_level, local_geometry_level),
-            C123(u³_halflevel, local_geometry_halflevel),
-        )
+        dot(uₕʰ_level, uₕ_level) +
+        2 * dot(uₕ³_level, u₃_level) +
+        dot(u₃³_level, u₃_level)
     ) / 2
 end
 
@@ -58,7 +49,6 @@ NVTX.@annotate function set_diagnostic_edmfx_env_quantities_level!(
     uₕ_level,
     K⁰_level,
     local_geometry_level,
-    local_geometry_halflevel,
     turbconv_model,
 )
     @. u³⁰_halflevel = divide_by_ρa(
@@ -69,12 +59,7 @@ NVTX.@annotate function set_diagnostic_edmfx_env_quantities_level!(
         ρ_level,
         turbconv_model,
     )
-    @. K⁰_level = kinetic_energy(
-        uₕ_level,
-        u³⁰_halflevel,
-        local_geometry_level,
-        local_geometry_halflevel,
-    )
+    @. K⁰_level = kinetic_energy(uₕ_level, u³⁰_halflevel, local_geometry_level)
     return nothing
 end
 
@@ -178,7 +163,6 @@ NVTX.@annotate function set_diagnostic_edmf_precomputed_quantities_bottom_bc!(
             uₕ_int_level,
             u³ʲ_int_halflevel,
             local_geometry_int_level,
-            local_geometry_int_halflevel,
         )
         set_diagnostic_edmfx_draft_quantities_level!(
             thermo_params,
@@ -205,7 +189,6 @@ NVTX.@annotate function set_diagnostic_edmf_precomputed_quantities_bottom_bc!(
         uₕ_int_level,
         K⁰_int_level,
         local_geometry_int_level,
-        local_geometry_int_halflevel,
         turbconv_model,
     )
 
@@ -794,12 +777,8 @@ NVTX.@annotate function set_diagnostic_edmf_precomputed_quantities_do_integral!(
                 )
             end
 
-            @. Kʲ_level = kinetic_energy(
-                uₕ_level,
-                u³ʲ_halflevel,
-                local_geometry_level,
-                local_geometry_halflevel,
-            )
+            @. Kʲ_level =
+                kinetic_energy(uₕ_level, u³ʲ_halflevel, local_geometry_level)
             set_diagnostic_edmfx_draft_quantities_level!(
                 thermo_params,
                 tsʲ_level,
@@ -823,7 +802,6 @@ NVTX.@annotate function set_diagnostic_edmf_precomputed_quantities_do_integral!(
             uₕ_level,
             K⁰_level,
             local_geometry_level,
-            local_geometry_halflevel,
             turbconv_model,
         )
     end
