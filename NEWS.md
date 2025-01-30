@@ -4,8 +4,18 @@ ClimaAtmos.jl Release Notes
 Main
 -------
 
+### Development
+
+The `.dev` was deprecated. The two utilities in this folder can be replaced with
+more established and better developed tools:
+- instead of `clima_format`, use `JuliaFormatter`,
+- instead of `up_deps`, use `PkgDevTools`.
+See the  [documentation](https://clima.github.io/ClimaAtmos.jl/dev/contributor_guide/#Formatting) for more information.
+
 ### Features
 
+v0.28.3
+-------
 ### Read CO2 from file
 
 `ClimaAtmos` now support using data from the Mauna Loa CO2 measurements to set
