@@ -1,7 +1,7 @@
 h_elem: 120
 z_elem: 43
 dz_bottom: 30.0
-dt: "50secs"
+dt: "40secs"
 t_end: "1days"
 ode_algo: ARS343
 initial_condition: "MoistBaroclinicWave"
