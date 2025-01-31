@@ -1,4 +1,4 @@
-208
+209
 
 # **README**
 #
@@ -20,6 +20,9 @@
 
 
 #=
+209 
+- Deep atmosphere eqns are used by default
+
 208
 - Update RRTMGP to v0.19.2, which changes cloud optics slightly
 
