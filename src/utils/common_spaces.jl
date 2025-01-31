@@ -49,11 +49,7 @@ function make_horizontal_space(
             mesh,
             Topologies.spacefillingcurve(mesh),
         )
-        Spaces.SpectralElementSpace2D(
-            topology,
-            quad;
-            enable_bubble = bubble,
-        )
+        Spaces.SpectralElementSpace2D(topology, quad; enable_bubble = bubble)
     end
     return space
 end

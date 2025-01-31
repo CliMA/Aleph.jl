@@ -1,5 +1,3 @@
-using PrecompileTools
-PrecompileTools.verbose[] = true 
 import ClimaAtmos as CA
 import ClimaComms
 import ClimaCore: InputOutput, Meshes, Spaces, Quadratures
@@ -27,5 +25,11 @@ import ClimaParams
     # This should more closely match `get_spaces...`
     h_space = CA.make_horizontal_space(horz_mesh, quad, comms_ctx, bubble)
 
-    CA.make_hybrid_spaces(h_space, z_max, z_elem, z_stretch; parsed_args = Dict("topography" => topography))
+    CA.make_hybrid_spaces(
+        h_space,
+        z_max,
+        z_elem,
+        z_stretch;
+        parsed_args = Dict("topography" => topography),
+    )
 end
