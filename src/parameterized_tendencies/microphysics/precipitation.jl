@@ -394,10 +394,10 @@ function precipitation_tendency!(
     compute_precipitation_surface_fluxes!(Y, p, precip_model)
 
     # Update grid mean tendencies
-    @. Yₜ.c.ρq_liq += Y.c.ρ * ᶜSqₗᵖ
-    @. Yₜ.c.ρq_ice += Y.c.ρ * ᶜSqᵢᵖ
-    @. Yₜ.c.ρq_rai += Y.c.ρ * ᶜSqᵣᵖ
-    @. Yₜ.c.ρq_sno += Y.c.ρ * ᶜSqₛᵖ
+    @. Yₜ.c.ρq_liq += Y.c.ρ * ᶜSqₗᵖ * 0
+    @. Yₜ.c.ρq_ice += Y.c.ρ * ᶜSqᵢᵖ * 0
+    @. Yₜ.c.ρq_rai += Y.c.ρ * ᶜSqᵣᵖ * 0
+    @. Yₜ.c.ρq_sno += Y.c.ρ * ᶜSqₛᵖ * 0
 
     return nothing
 end
