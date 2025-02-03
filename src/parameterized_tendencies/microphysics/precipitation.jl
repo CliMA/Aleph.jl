@@ -327,30 +327,32 @@ function compute_precipitation_surface_fluxes!(
     (; surface_rain_flux, surface_snow_flux) = p.precipitation
     (; col_integrated_precip_energy_tendency,) = p.conservation_check
     (; ᶜwᵣ, ᶜwₛ, ᶜspecific) = p.precomputed
+    ᶜlg = Fields.local_geometry_field(Y.c)
+    ˢlg = Fields.level(Fields.local_geometry_field(Y.f), Fields.half)
+    ⁱlg = Fields.Field(Fields.field_values(Fields.level(ᶜlg, 1)), axes(ˢlg))
 
-    (; ᶠtemp_scalar) = p.scratch
-    slg = Fields.level(Fields.local_geometry_field(ᶠtemp_scalar), Fields.half)
+    # Jacobian-weighted extrapolation from interior center to surface face,
+    # consistent with the 3D quantity ᶠρ = ᶠinterp(ᶜJ * Y.c.ρ) / ᶠJ 
+    ⁱρ = Fields.Field(Fields.field_values(Fields.level(Y.c.ρ, 1)), axes(ˢlg))
+    ˢρ = @lazy @. ⁱlg.J * ⁱρ / ˢlg.J
 
-    # Constant extrapolation: - put values from bottom cell center to bottom cell face
-    ˢρ = Fields.Field(Fields.field_values(Fields.level(Y.c.ρ, 1)), axes(slg))
-    # For density this is equivalent with ᶠwinterp(ᶜJ, Y.c.ρ) and therefore
-    # consistent with the way we do vertical advection
+    # Constant extrapolation to surface, consistent with simple downwinding
     ˢqᵣ = Fields.Field(
         Fields.field_values(Fields.level(ᶜspecific.q_rai, 1)),
-        axes(slg),
+        axes(ˢlg),
     )
     ˢqₛ = Fields.Field(
         Fields.field_values(Fields.level(ᶜspecific.q_sno, 1)),
-        axes(slg),
+        axes(ˢlg),
     )
-    ˢwᵣ = Fields.Field(Fields.field_values(Fields.level(ᶜwᵣ, 1)), axes(slg))
-    ˢwₛ = Fields.Field(Fields.field_values(Fields.level(ᶜwₛ, 1)), axes(slg))
+    ˢwᵣ = Fields.Field(Fields.field_values(Fields.level(ᶜwᵣ, 1)), axes(ˢlg))
+    ˢwₛ = Fields.Field(Fields.field_values(Fields.level(ᶜwₛ, 1)), axes(ˢlg))
 
     # Project the flux to CT3 vector and convert to physical units.
     @. surface_rain_flux =
-        -projected_vector_data(CT3, ˢρ * ˢqᵣ * Geometry.WVector(ˢwᵣ), slg)
+        -projected_vector_data(CT3, ˢρ * ˢqᵣ * Geometry.WVector(ˢwᵣ), ˢlg)
     @. surface_snow_flux =
-        -projected_vector_data(CT3, ˢρ * ˢqₛ * Geometry.WVector(ˢwₛ), slg)
+        -projected_vector_data(CT3, ˢρ * ˢqₛ * Geometry.WVector(ˢwₛ), ˢlg)
 end
 
 function precipitation_tendency!(
