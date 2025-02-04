@@ -319,28 +319,32 @@ function thermo_state(
     return get_ts(ρ, p, θ, e_int, q_tot, q_pt)
 end
 
-function thermo_vars(moisture_model, specific, K, Φ)
+function thermo_vars(moisture_model, precip_model, specific, K, Φ)
     energy_var = (; e_int = specific.e_tot - K - Φ)
     moisture_var = if moisture_model isa DryModel
         (;)
     elseif moisture_model isa EquilMoistModel
         (; specific.q_tot)
     elseif moisture_model isa NonEquilMoistModel
-        q_pt_args = (specific.q_tot, specific.q_liq, specific.q_ice)
+        q_pt_args = (
+            specific.q_tot,
+            specific.q_liq + specific.q_rai,
+            specific.q_ice + specific.q_sno,
+        )
         (; q_pt = TD.PhasePartition(q_pt_args...))
     end
     return (; energy_var..., moisture_var...)
 end
 
-ts_gs(thermo_params, moisture_model, specific, K, Φ, ρ) = thermo_state(
+ts_gs(thermo_params, moisture_model, precip_model, specific, K, Φ, ρ) = thermo_state(
     thermo_params;
-    thermo_vars(moisture_model, specific, K, Φ)...,
+    thermo_vars(moisture_model, precip_model, specific, K, Φ)...,
     ρ,
 )
 
-ts_sgs(thermo_params, moisture_model, specific, K, Φ, p) = thermo_state(
+ts_sgs(thermo_params, moisture_model, precip_model, specific, K, Φ, p) = thermo_state(
     thermo_params;
-    thermo_vars(moisture_model, specific, K, Φ)...,
+    thermo_vars(moisture_model, precip_model, specific, K, Φ)...,
     p,
 )
 
@@ -476,7 +480,7 @@ NVTX.@annotate function set_precomputed_quantities!(Y, p, t)
     (; call_cloud_diagnostics_per_stage) = p.atmos
     thermo_params = CAP.thermodynamics_params(p.params)
     n = n_mass_flux_subdomains(turbconv_model)
-    thermo_args = (thermo_params, moisture_model)
+    thermo_args = (thermo_params, moisture_model, precip_model)
     (; ᶜΦ) = p.core
     (; ᶜspecific, ᶜu, ᶠu³, ᶜK, ᶜts, ᶜp) = p.precomputed
     ᶠuₕ³ = p.scratch.ᶠtemp_CT3
@@ -541,21 +545,21 @@ NVTX.@annotate function set_precomputed_quantities!(Y, p, t)
     #
     if moisture_model isa NonEquilMoistModel
         set_sedimentation_precomputed_quantities!(Y, p, t)
-        #    (; ᶜwₗ, ᶜwᵢ) = p.precomputed
-        #    @. ᶜwₜqₜ += Geometry.WVector(ᶜwₗ * Y.c.ρq_liq + ᶜwᵢ * Y.c.ρq_ice) / Y.c.ρ
-        #    @. ᶜwₕhₜ += Geometry.WVector(
-        #        ᶜwₗ * Y.c.ρq_liq * (TD.internal_energy_liquid(thermo_params, ᶜts) + ᶜΦ + norm_sqr(Geometry.UVWVector(0, 0, -ᶜwₗ) + Geometry.UVWVector(ᶜu))/2) +
-        #        ᶜwᵢ * Y.c.ρq_ice * (TD.internal_energy_ice(thermo_params, ᶜts)    + ᶜΦ + norm_sqr(Geometry.UVWVector(0, 0, -ᶜwᵢ) + Geometry.UVWVector(ᶜu))/2)
-        #    ) / Y.c.ρ
+        (; ᶜwₗ, ᶜwᵢ) = p.precomputed
+        @. ᶜwₜqₜ += Geometry.WVector(ᶜwₗ * Y.c.ρq_liq + ᶜwᵢ * Y.c.ρq_ice) / Y.c.ρ
+        @. ᶜwₕhₜ += Geometry.WVector(
+            ᶜwₗ * Y.c.ρq_liq * (TD.internal_energy_liquid(thermo_params, ᶜts) + ᶜΦ + norm_sqr(Geometry.UVWVector(0, 0, ᶜwₗ) + Geometry.UVWVector(ᶜu))/2) +
+            ᶜwᵢ * Y.c.ρq_ice * (TD.internal_energy_ice(thermo_params, ᶜts)    + ᶜΦ + norm_sqr(Geometry.UVWVector(0, 0, ᶜwᵢ) + Geometry.UVWVector(ᶜu))/2)
+        ) / Y.c.ρ
     end
     if precip_model isa Microphysics1Moment
         set_precipitation_precomputed_quantities!(Y, p, t)
-        #    (; ᶜwᵣ, ᶜwₛ) = p.precomputed
-        #    @. ᶜwₜqₜ += Geometry.WVector(ᶜwᵣ * Y.c.ρq_rai + ᶜwₛ * Y.c.ρq_sno) / Y.c.ρ
-        #    @. ᶜwₕhₜ += Geometry.WVector(
-        #        ᶜwᵣ * Y.c.ρq_rai * (TD.internal_energy_liquid(thermo_params, ᶜts) + ᶜΦ + norm_sqr(Geometry.UVWVector(0, 0, -ᶜwᵣ) + Geometry.UVWVector(ᶜu))/2) +
-        #        ᶜwₛ * Y.c.ρq_sno * (TD.internal_energy_ice(thermo_params, ᶜts)    + ᶜΦ + norm_sqr(Geometry.UVWVector(0, 0, -ᶜwₛ) + Geometry.UVWVector(ᶜu))/2)
-        #    ) / Y.c.ρ
+        (; ᶜwᵣ, ᶜwₛ) = p.precomputed
+        @. ᶜwₜqₜ += Geometry.WVector(ᶜwᵣ * Y.c.ρq_rai + ᶜwₛ * Y.c.ρq_sno) / Y.c.ρ
+        @. ᶜwₕhₜ += Geometry.WVector(
+            ᶜwᵣ * Y.c.ρq_rai * (TD.internal_energy_liquid(thermo_params, ᶜts) + ᶜΦ + norm_sqr(Geometry.UVWVector(0, 0, ᶜwᵣ) + Geometry.UVWVector(ᶜu))/2) +
+            ᶜwₛ * Y.c.ρq_sno * (TD.internal_energy_ice(thermo_params, ᶜts)    + ᶜΦ + norm_sqr(Geometry.UVWVector(0, 0, ᶜwₛ) + Geometry.UVWVector(ᶜu))/2)
+        ) / Y.c.ρ
     end
 
     if turbconv_model isa PrognosticEDMFX
