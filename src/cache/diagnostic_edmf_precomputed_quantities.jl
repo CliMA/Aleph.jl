@@ -94,7 +94,6 @@ NVTX.@annotate function set_diagnostic_edmf_precomputed_quantities_bottom_bc!(
     n = n_mass_flux_subdomains(turbconv_model)
     (; ᶜΦ) = p.core
     (; ᶜp, ᶠu³, ᶜh_tot, ᶜK) = p.precomputed
-    (; q_tot) = p.precomputed.ᶜspecific
     (; ustar, obukhov_length, buoyancy_flux, ρ_flux_h_tot, ρ_flux_q_tot) =
         p.precomputed.sfc_conditions
     (; ᶜρaʲs, ᶠu³ʲs, ᶜKʲs, ᶜmseʲs, ᶜq_totʲs, ᶜtsʲs, ᶜρʲs) = p.precomputed
@@ -109,6 +108,8 @@ NVTX.@annotate function set_diagnostic_edmf_precomputed_quantities_bottom_bc!(
     u³_int_halflevel = Fields.field_values(Fields.level(ᶠu³, half))
     h_tot_int_level = Fields.field_values(Fields.level(ᶜh_tot, 1))
     K_int_level = Fields.field_values(Fields.level(ᶜK, 1))
+    @. p.scratch.ᶜtemp_scalar_3 = Y.c.ρq_tot / Y.c.ρ
+    q_tot = p.scratch.ᶜtemp_scalar_3
     q_tot_int_level = Fields.field_values(Fields.level(q_tot, 1))
 
     p_int_level = Fields.field_values(Fields.level(ᶜp, 1))
@@ -298,7 +299,6 @@ NVTX.@annotate function set_diagnostic_edmf_precomputed_quantities_do_integral!(
     (; dt) = p
     (; ᶜΦ) = p.core
     (; ᶜp, ᶠu³, ᶜts, ᶜh_tot, ᶜK) = p.precomputed
-    (; q_tot) = p.precomputed.ᶜspecific
     (;
         ᶜρaʲs,
         ᶠu³ʲs,
@@ -336,6 +336,8 @@ NVTX.@annotate function set_diagnostic_edmf_precomputed_quantities_do_integral!(
         Fields.field_values(Fields.level(Fields.coordinate_field(Y.f).z, half))
 
     # integral
+    @. p.scratch.ᶜtemp_scalar_3 = Y.c.ρq_tot / Y.c.ρ
+    q_tot = p.scratch.ᶜtemp_scalar_3
     for i in 2:Spaces.nlevels(axes(Y.c))
         ρ_level = Fields.field_values(Fields.level(Y.c.ρ, i))
         uₕ_level = Fields.field_values(Fields.level(Y.c.uₕ, i))
@@ -911,7 +913,6 @@ NVTX.@annotate function set_diagnostic_edmf_precomputed_quantities_env_closures!
     (; params) = p
     (; dt) = p
     (; ᶜp, ᶜu, ᶜts) = p.precomputed
-    (; q_tot) = p.precomputed.ᶜspecific
     (; ustar, obukhov_length) = p.precomputed.sfc_conditions
     (; ᶜρaʲs, ᶠu³ʲs, ᶜdetrʲs) = p.precomputed
     (; ᶜtke⁰, ᶠu³⁰, ᶜu⁰) = p.precomputed
@@ -1031,14 +1032,13 @@ NVTX.@annotate function set_diagnostic_edmf_precomputed_quantities_env_precipita
     microphys_0m_params = CAP.microphysics_0m_params(p.params)
     (; dt) = p
     (; ᶜts, ᶜSqₜᵖ⁰) = p.precomputed
-    (; q_tot) = p.precomputed.ᶜspecific
 
     # Environment precipitation sources (to be applied to grid mean)
     @. ᶜSqₜᵖ⁰ = q_tot_0M_precipitation_sources(
         thermo_params,
         microphys_0m_params,
         dt,
-        q_tot,
+        Y.c.ρq_tot / Y.c.ρ,
         ᶜts,
     )
     return nothing
@@ -1053,7 +1053,6 @@ NVTX.@annotate function set_diagnostic_edmf_precomputed_quantities_env_precipita
     microphys_1m_params = CAP.microphysics_1m_params(p.params)
 
     (; ᶜts, ᶜSqₜᵖ⁰, ᶜSeₜᵖ⁰, ᶜSqᵣᵖ⁰, ᶜSqₛᵖ⁰) = p.precomputed
-    (; q_tot) = p.precomputed.ᶜspecific
     (; ᶜqᵣ, ᶜqₛ) = p.precomputed
 
     ᶜSᵖ = p.scratch.ᶜtemp_scalar
