@@ -99,6 +99,10 @@ end
 struct RCEMIPIIInsolation <: AbstractInsolation end
 struct GCMDrivenInsolation <: AbstractInsolation end
 
+abstract type AbstractGCMDrivenForcingType end
+struct ShallowGCMForcingType <: AbstractGCMDrivenForcingType end
+struct DeepGCMForcingType <: AbstractGCMDrivenForcingType end
+
 """
     AbstractOzone
 
@@ -282,8 +286,9 @@ struct LargeScaleAdvection{PT, PQ}
     prof_dqtdt::PQ # Set large-scale drying
 end
 # maybe need to <: AbstractForcing
-struct GCMForcing{FT}
+struct GCMForcing{FT, GFT <: AbstractGCMDrivenForcingType}
     external_forcing_file::String
+    external_forcing_type::GFT
     cfsite_number::String
 end
 
