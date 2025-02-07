@@ -41,10 +41,15 @@ NVTX.@annotate function additional_tendency!(Yₜ, Y, p, t)
     ᶜuₕ = Y.c.uₕ
     ᶠu₃ = Yₜ.f.u₃
     ᶜρ = Y.c.ρ
+    ᶜρe_tot = Y.c.ρe_tot
     (; forcing_type, moisture_model, rayleigh_sponge, viscous_sponge) = p.atmos
-    (; edmf_coriolis) = p.atmos
+    (; subsidence, edmf_coriolis) = p.atmos
     (; params) = p
-    (; ᶜp, sfc_conditions) = p.precomputed
+    thermo_params = CAP.thermodynamics_params(params)
+    (; ᶜp, sfc_conditions, ᶜts) = p.precomputed
+    ᶠspace = axes(Y.f)
+    ᶠz = Fields.coordinate_field(ᶠspace).z
+    ᶠlg = Fields.local_geometry_field(ᶠspace)
 
     vst_uₕ = viscous_sponge_tendency_uₕ(ᶜuₕ, viscous_sponge)
     vst_u₃ = viscous_sponge_tendency_u₃(ᶠu₃, viscous_sponge)
@@ -53,6 +58,7 @@ NVTX.@annotate function additional_tendency!(Yₜ, Y, p, t)
     hs_args = (ᶜuₕ, ᶜp, params, sfc_conditions.ts, moisture_model, forcing_type)
     hs_tendency_uₕ = held_suarez_forcing_tendency_uₕ(hs_args...)
     hs_tendency_ρe_tot = held_suarez_forcing_tendency_ρe_tot(ᶜρ, hs_args...)
+    subs_args = (subsidence, thermo_params, ᶜts, ᶜρ, ᶜρe_tot)
     edmf_cor_tend_uₕ = edmf_coriolis_tendency_uₕ(ᶜuₕ, edmf_coriolis)
 
     # TODO: fuse, once we fix
@@ -63,20 +69,27 @@ NVTX.@annotate function additional_tendency!(Yₜ, Y, p, t)
     @. Yₜ.c.ρe_tot += vst_ρe_tot
 
     # TODO: can we write this out explicitly?
-    if viscous_sponge isa ViscousSponge
-        for (ᶜρχₜ, ᶜχ, χ_name) in matching_subfields(Yₜ.c, ᶜspecific)
-            χ_name == :e_tot && continue
-            vst_tracer = viscous_sponge_tendency_tracer(ᶜρ, ᶜχ, viscous_sponge)
-            @. ᶜρχₜ += vst_tracer
-            @. Yₜ.c.ρ += vst_tracer
-        end
+    for (ᶜρχₜ, ᶜχ, χ_name) in matching_subfields(Yₜ.c, ᶜspecific)
+        χ_name == :e_tot && continue
+        vst_tracer = viscous_sponge_tendency_tracer(ᶜρ, ᶜχ, viscous_sponge)
+        @. ᶜρχₜ += vst_tracer
+        @. Yₜ.c.ρ += vst_tracer
     end
 
     # Held Suarez tendencies
     @. Yₜ.c.uₕ += hs_tendency_uₕ
     @. Yₜ.c.ρe_tot += hs_tendency_ρe_tot
 
-    subsidence_tendency!(Yₜ, Y, p, t, p.atmos.subsidence)
+    if moisture_model isa AbstractMoistModel
+        bc_subsidence_ρq_tot = subsidence_tendency(Val(:q_tot), subs_args...)
+        @. Yₜ.c.ρq_tot += bc_subsidence_ρq_tot
+    end
+    if moisture_model isa NonEquilMoistModel
+        bc_subsidence_ρq_liq = subsidence_tendency(Val(:q_liq), subs_args...)
+        bc_subsidence_ρq_ice = subsidence_tendency(Val(:q_ice), subs_args...)
+        @. Yₜ.c.ρq_liq += bc_subsidence_ρq_liq
+        @. Yₜ.c.ρq_ice += bc_subsidence_ρq_ice
+    end
 
     @. Yₜ.c.uₕ += edmf_cor_tend_uₕ
 
