@@ -197,8 +197,7 @@ the `turbconv_model` is EDMFX, the `Y.f.sgsʲs` are also modified so that each
 """
 function set_velocity_at_surface!(Y, ᶠuₕ³, turbconv_model)
     sfc_u₃ = Fields.level(Y.f.u₃.components.data.:1, half)
-    bc_sfc_u₃ = surface_velocity(Y.f.u₃, ᶠuₕ³)
-    @. sfc_u₃ = bc_sfc_u₃
+    sfc_u₃ .= surface_velocity(Y.f.u₃, ᶠuₕ³)
     if turbconv_model isa PrognosticEDMFX
         for j in 1:n_mass_flux_subdomains(turbconv_model)
             sfc_u₃ʲ = Fields.level(Y.f.sgsʲs.:($j).u₃.components.data.:1, half)
@@ -240,12 +239,10 @@ end
 
 # This is used to set the grid-scale velocity quantities ᶜu, ᶠu³, ᶜK based on
 # ᶠu₃, and it is also used to set the SGS quantities based on ᶠu₃⁰ and ᶠu₃ʲ.
-function set_velocity_quantities!(ᶜu, ᶠu³, ᶜK, ᶠu₃, ᶜuₕ, ᶠuₕ³)
-    @. ᶜu = C123(ᶜuₕ) + ᶜinterp(C123(ᶠu₃))
-    @. ᶠu³ = ᶠuₕ³ + CT3(ᶠu₃)
-    bc_kinetic = compute_kinetic(ᶜuₕ, ᶠu₃)
-    @. ᶜK = bc_kinetic
-    return nothing
+compute_ᶜu(ᶜuₕ, ᶠu₃) = @lazy @. C123(ᶜuₕ) + ᶜinterp(C123(ᶠu₃))
+function compute_ᶠu³(ᶜuₕ, ᶜρ, ᶠu₃)
+    ᶠuₕ³ = compute_ᶠuₕ³(ᶜuₕ, ᶜρ)
+    return @lazy @. ᶠuₕ³ + CT3(ᶠu₃)
 end
 
 function set_sgs_ᶠu₃!(w_function, ᶠu₃, Y, turbconv_model)
@@ -385,15 +382,18 @@ NVTX.@annotate function set_precomputed_quantities!(Y, p, t)
     @. ᶜspecific = specific_gs(Y.c)
     ᶜρ = Y.c.ρ
     ᶜuₕ = Y.c.uₕ
-    bc_ᶠuₕ³ = compute_ᶠuₕ³(ᶜuₕ, ᶜρ)
-    @. ᶠuₕ³ = bc_ᶠuₕ³
+    ᶠu₃ = Y.f.u₃
+    ᶠuₕ³ .= compute_ᶠuₕ³(ᶜuₕ, ᶜρ)
 
     # TODO: We might want to move this to dss! (and rename dss! to something
     # like enforce_constraints!).
     set_velocity_at_surface!(Y, ᶠuₕ³, turbconv_model)
     set_velocity_at_top!(Y, turbconv_model)
 
-    set_velocity_quantities!(ᶜu, ᶠu³, ᶜK, Y.f.u₃, Y.c.uₕ, ᶠuₕ³)
+    ᶠu³ .= compute_ᶠu³(ᶜuₕ, ᶜρ, ᶠu₃)
+    ᶜu .= compute_ᶜu(ᶜuₕ, ᶠu₃)
+    ᶜK .= compute_kinetic(ᶜuₕ, ᶠu₃)
+
     if n > 0
         # TODO: In the following increments to ᶜK, we actually need to add
         # quantities of the form ᶜρaχ⁰ / ᶜρ⁰ and ᶜρaχʲ / ᶜρʲ to ᶜK, rather than
@@ -496,8 +496,8 @@ NVTX.@annotate function set_precomputed_quantities!(Y, p, t)
     end
 
     if turbconv_model isa PrognosticEDMFX
-        set_prognostic_edmf_precomputed_quantities_draft_and_bc!(Y, p, ᶠuₕ³, t)
-        set_prognostic_edmf_precomputed_quantities_environment!(Y, p, ᶠuₕ³, t)
+        set_prognostic_edmf_precomputed_quantities_draft_and_bc!(Y, p, t)
+        set_prognostic_edmf_precomputed_quantities_environment!(Y, p, t)
         set_prognostic_edmf_precomputed_quantities_closures!(Y, p, t)
         set_prognostic_edmf_precomputed_quantities_precipitation!(
             Y,
@@ -521,12 +521,10 @@ NVTX.@annotate function set_precomputed_quantities!(Y, p, t)
 
     if vert_diff isa DecayWithHeightDiffusion
         (; ᶜK_h) = p.precomputed
-        bc_K_h = compute_eddy_diffusivity_coefficient(ᶜρ, vert_diff)
-        @. ᶜK_h = bc_K_h
+        ᶜK_h .= compute_eddy_diffusivity_coefficient(ᶜρ, vert_diff)
     elseif vert_diff isa VerticalDiffusion
         (; ᶜK_h) = p.precomputed
-        bc_K_h = compute_eddy_diffusivity_coefficient(Y.c.uₕ, ᶜp, vert_diff)
-        @. ᶜK_h = bc_K_h
+        ᶜK_h .= compute_eddy_diffusivity_coefficient(Y.c.uₕ, ᶜp, vert_diff)
     end
 
     # TODO
