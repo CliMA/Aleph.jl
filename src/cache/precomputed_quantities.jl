@@ -237,12 +237,33 @@ function set_velocity_at_top!(Y, turbconv_model)
     return nothing
 end
 
+"""
+    compute_ᶜu(ᶜuₕ, ᶠu₃)
+
+Computes the cell-centered velocity, given
+
+ - `ᶜuₕ` the cell-centered horizontal velocity
+ - `ᶠu₃` the cell-face `Covariant3` velocity
+"""
+compute_ᶜu(ᶜuₕ, ᶠu₃) = @. lazy(C123(ᶜuₕ) + ᶜinterp(C123(ᶠu₃)))
+
+"""
+    compute_ᶠu³(ᶠuₕ³, ᶠu₃)
+
+Computes the cell-face contravariant velocity, given
+
+ - `ᶠuₕ³` the cell-face horizontal `Contravariant3` velocity
+ - `ᶠu₃` the cell-face `Covariant3` velocity
+"""
+compute_ᶠu³(ᶠuₕ³, ᶠu₃) = ᶠuₕ³ + CT3(ᶠu₃)
+
 # This is used to set the grid-scale velocity quantities ᶜu, ᶠu³, ᶜK based on
 # ᶠu₃, and it is also used to set the SGS quantities based on ᶠu₃⁰ and ᶠu₃ʲ.
-compute_ᶜu(ᶜuₕ, ᶠu₃) = @lazy @. C123(ᶜuₕ) + ᶜinterp(C123(ᶠu₃))
-function compute_ᶠu³(ᶜuₕ, ᶜρ, ᶠu₃)
-    ᶠuₕ³ = compute_ᶠuₕ³(ᶜuₕ, ᶜρ)
-    return @lazy @. ᶠuₕ³ + CT3(ᶠu₃)
+function set_velocity_quantities!(ᶜu, ᶠu³, ᶜK, ᶠu₃, ᶜuₕ, ᶜρ)
+    ᶜu .= compute_ᶜu(ᶜuₕ, ᶠu₃)
+    ᶠu³ .= compute_ᶠu³.(compute_ᶠuₕ³(ᶜuₕ, ᶜρ), ᶠu₃)
+    ᶜK .= compute_kinetic(ᶜuₕ, ᶠu₃)
+    return nothing
 end
 
 function set_sgs_ᶠu₃!(w_function, ᶠu₃, Y, turbconv_model)
@@ -390,9 +411,7 @@ NVTX.@annotate function set_precomputed_quantities!(Y, p, t)
     set_velocity_at_surface!(Y, ᶠuₕ³, turbconv_model)
     set_velocity_at_top!(Y, turbconv_model)
 
-    ᶠu³ .= compute_ᶠu³(ᶜuₕ, ᶜρ, ᶠu₃)
-    ᶜu .= compute_ᶜu(ᶜuₕ, ᶠu₃)
-    ᶜK .= compute_kinetic(ᶜuₕ, ᶠu₃)
+    set_velocity_quantities!(ᶜu, ᶠu³, ᶜK, Y.f.u₃, Y.c.uₕ, ᶜρ)
 
     if n > 0
         # TODO: In the following increments to ᶜK, we actually need to add

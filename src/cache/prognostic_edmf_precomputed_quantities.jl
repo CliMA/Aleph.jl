@@ -44,9 +44,7 @@ NVTX.@annotate function set_prognostic_edmf_precomputed_quantities_environment!(
         turbconv_model,
     )
     set_sgs_ᶠu₃!(u₃⁰, ᶠu₃⁰, Y, turbconv_model)
-    ᶠu³⁰ .= compute_ᶠu³(ᶜuₕ, ᶜρ, ᶠu₃)
-    ᶜu⁰ .= compute_ᶜu(ᶜuₕ, ᶠu₃⁰)
-    ᶜK⁰ .= compute_kinetic(ᶜuₕ, ᶠu₃⁰)
+    set_velocity_quantities!(ᶜu⁰, ᶠu³⁰, ᶜK⁰, ᶠu₃⁰, Y.c.uₕ, ᶜρ)
 
     # @. ᶜK⁰ += ᶜtke⁰
     @. ᶜts⁰ = TD.PhaseEquil_phq(thermo_params, ᶜp, ᶜmse⁰ - ᶜΦ, ᶜq_tot⁰)
@@ -95,9 +93,7 @@ NVTX.@annotate function set_prognostic_edmf_precomputed_quantities_draft_and_bc!
         ᶜmseʲ = Y.c.sgsʲs.:($j).mse
         ᶜq_totʲ = Y.c.sgsʲs.:($j).q_tot
 
-        ᶠu³ʲ .= compute_ᶠu³(ᶜuₕ, ᶜρ, ᶠu₃)
-        ᶜuʲ .= compute_ᶜu(ᶜuₕ, ᶠu₃ʲ)
-        ᶜKʲ .= compute_kinetic(ᶜuₕ, ᶠu₃ʲ)
+        set_velocity_quantities!(ᶜuʲ, ᶠu³ʲ, ᶜKʲ, ᶠu₃ʲ, Y.c.uₕ, ᶜρ)
 
         @. ᶠKᵥʲ = (adjoint(CT3(ᶠu₃ʲ)) * ᶠu₃ʲ) / 2
         @. ᶜtsʲ = TD.PhaseEquil_phq(thermo_params, ᶜp, ᶜmseʲ - ᶜΦ, ᶜq_totʲ)
