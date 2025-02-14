@@ -6,12 +6,12 @@
 #strong scaling
 ss_nodes = (1, 2, 4) # number of nodes for weak scaling runs
 ss_helems = (30, 60, 120) # helems for weak scaling runs
-procspernode = 16 # number of MPI processes per node
+ss_procspernode = 16 # number of MPI processes per node
 
 # weak scaling
 ws_nodes = (1, 2, 4) # number of nodes for weak scaling runs
 ws_helems = (30, 42, 60) # helems for weak scaling runs
-procspernode = 16 # number of MPI processes per node
+ws_procspernode = 16 # number of MPI processes per node
 
 import YAML
 
@@ -58,6 +58,7 @@ function generate_step_ws(nodes::Int, helems::Int, procspernode::Int)
             "slurm_cpus_per_task" => 1,
             "slurm_mem" => 0,
             "slurm_time" => "1:00:00",
+            "slurm_reservation" => "false",
             "slurm_exclusive" => true,
         ),
     )
@@ -77,6 +78,7 @@ function generate_step_ss(nodes::Int, helems::Int, procspernode::Int)
             "slurm_cpus_per_task" => 1,
             "slurm_mem" => 0,
             "slurm_time" => "1:00:00",
+            "slurm_reservation" => "false",
             "slurm_exclusive" => true,
         ),
     )
@@ -91,13 +93,13 @@ pipeline = Dict(
         Dict(
             "group" => "Moist Baroclinic Wave, weak scaling",
             "steps" => [
-                generate_step_ws.(ws_nodes, ws_helems, procspernode)...,
+                generate_step_ws.(ws_nodes, ws_helems, ws_procspernode)...,
             ],
         ),
         Dict(
             "group" => "Moist Baroclinic Wave, strong scaling",
             "steps" => [
-                generate_step_ss.(ss_nodes, ss_helems, procspernode)...,
+                generate_step_ss.(ss_nodes, ss_helems, ss_procspernode)...,
             ],
         ),
     ],
