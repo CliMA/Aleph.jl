@@ -209,8 +209,12 @@ NVTX.@annotate function rrtmgp_model_callback!(integrator)
             # RRTMGP needs effective radius in microns
             @. ᶜreliq = ifelse(
                 cloud_liquid_water_content > FT(0),
-                CM.CloudDiagnostics.effective_radius_const(cmc.liquid) *
-                m_to_um_factor,
+                #CM.CloudDiagnostics.effective_radius_const(cmc.liquid) *
+                CM.CloudDiagnostics.effective_radius_Liu_Hallet_97(
+                    cmc.liquid,
+                    Y.c.ρ,
+                    cloud_liquid_water_content,
+                ) * m_to_um_factor,
                 FT(0),
             )
             @. ᶜreice = ifelse(
